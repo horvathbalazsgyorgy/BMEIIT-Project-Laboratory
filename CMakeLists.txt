@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 4.1)
+cmake_minimum_required(VERSION 3.10)
 project(ProjectLaboratory)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 
 #glfw
 add_subdirectory(libs/glfw-3.4)
