@@ -26,7 +26,8 @@ add_library(framework
         framework/mesh.h)
 target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(ProjectLaboratory src/main.cpp)
+add_executable(ProjectLaboratory src/main.cpp
+        src/test/testmesh.h)
 
 target_link_libraries(framework PUBLIC glfw glad OpenGL::GL glm)
 
