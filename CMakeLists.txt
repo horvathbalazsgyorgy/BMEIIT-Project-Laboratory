@@ -21,7 +21,9 @@ find_package(OpenGL REQUIRED)
 add_library(framework
         framework/framework.h
         framework/application.cpp
-        framework/application.h)
+        framework/application.h
+        framework/scene.cpp
+        framework/scene.h)
 target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(ProjectLaboratory src/main.cpp)

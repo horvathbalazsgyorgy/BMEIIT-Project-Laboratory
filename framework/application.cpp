@@ -1,6 +1,8 @@
 #include "application.h"
 #include <iostream>
 
+using namespace std;
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
@@ -33,12 +35,16 @@ namespace Framework {
         }
     }
 
+    void print(int(*func)(int, int));
+
     void GLApplication::render() {
         while (!glfwWindowShouldClose(window)) {
             exit_key_callback(window);
 
             glClearColor(0.3f, 0.5f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
+
+            //scene->update(key_callback);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
