@@ -17,6 +17,15 @@ target_include_directories(glm INTERFACE libs/glm)
 #opengl
 find_package(OpenGL REQUIRED)
 
+#framework
+add_library(framework
+        framework/framework.h
+        framework/application.cpp
+        framework/application.h)
+target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_executable(ProjectLaboratory src/main.cpp)
 
-target_link_libraries(ProjectLaboratory glfw glad OpenGL::GL glm)
+target_link_libraries(framework PUBLIC glfw glad OpenGL::GL glm)
+
+target_link_libraries(ProjectLaboratory PRIVATE framework)
