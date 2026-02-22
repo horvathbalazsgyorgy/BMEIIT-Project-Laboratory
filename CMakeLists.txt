@@ -31,7 +31,11 @@ add_library(framework
         framework/scenebuilder.h)
 target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(ProjectLaboratory src/main.cpp)
+file(COPY src/glsl DESTINATION ${CMAKE_BINARY_DIR})
+
+add_executable(ProjectLaboratory src/main.cpp
+        src/builder2d.h
+        src/triangle.h)
 
 target_link_libraries(framework PUBLIC glfw glad OpenGL::GL glm)
 

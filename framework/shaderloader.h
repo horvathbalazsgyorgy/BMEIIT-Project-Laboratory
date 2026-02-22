@@ -7,20 +7,36 @@
 
 using namespace std;
 
-struct GLSLoader {
-    //TODO: CMake command to copy to build folder
-    static string convertToShaderString(const char* shaderCode) {
-
-    }
-};
-
 namespace Framework {
     class ShaderLoader {
         ShaderLoader() { }
+        inline static string shaderCode;
+
+        static string convertGLSLToString(const char* shader) {
+            string code;
+            string prefix = "glsl/";
+            prefix.append(shader);
+
+            ifstream shaderFile(prefix);
+            if (!shaderFile.is_open()) {
+                throw std::runtime_error("ERROR:\nUnable to open shader file or file not found\n");
+            }
+
+            string line;
+            while (getline(shaderFile, line)) {
+                code.append(line + "\n");
+            }
+            shaderFile.close();
+
+            return code;
+        }
     public:
         static GLuint createAndCompileShader(unsigned int type, const char* source) {
             auto shaderID = glCreateShader(type);
-            glShaderSource(shaderID, 1, &source, nullptr);
+            shaderCode = convertGLSLToString(source);
+            const char* code = shaderCode.c_str();
+
+            glShaderSource(shaderID, 1, &code, nullptr);
             glCompileShader(shaderID);
 
             int success = 1;

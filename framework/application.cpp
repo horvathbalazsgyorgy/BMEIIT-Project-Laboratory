@@ -37,14 +37,14 @@ namespace Framework {
 
     void print(int(*func)(int, int));
 
-    void GLApplication::render() {
+    void GLApplication::render(Scene* scene) {
         while (!glfwWindowShouldClose(window)) {
             exit_key_callback(window);
 
             glClearColor(0.3f, 0.5f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            //scene->update(key_callback);
+            scene->drawScene();
 
             glfwSwapBuffers(window);
             glfwPollEvents();
