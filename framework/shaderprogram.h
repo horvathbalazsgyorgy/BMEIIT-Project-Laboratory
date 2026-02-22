@@ -1,16 +1,21 @@
 #ifndef PROJECTLABORATORY_SHADER_H
 #define PROJECTLABORATORY_SHADER_H
 
+#define STRINGIFY(x) #x
+
 #include <stdexcept>
 #include "glad/glad.h"
+#include "glm/glm.hpp"
 
 using namespace std;
+using namespace glm;
 
 namespace Framework {
     class ShaderProgram {
-        unsigned int shaderProgram;
+        GLuint shaderProgram;
+        //UniformLoader* loader;
     public:
-        ShaderProgram(unsigned int vertexShader, unsigned int fragmentShader) {
+        ShaderProgram(GLuint vertexShader, GLuint fragmentShader) {
             shaderProgram = glCreateProgram();
             glAttachShader(shaderProgram, vertexShader);
             glAttachShader(shaderProgram, fragmentShader);
@@ -29,6 +34,11 @@ namespace Framework {
         }
         void useShaderProgram() const {
             glUseProgram(shaderProgram);
+        }
+
+        //TODO: universal setUniform function
+        void setUniform() {
+
         }
 
         ~ShaderProgram() {
