@@ -1,8 +1,6 @@
 #ifndef PROJECTLABORATORY_SHADER_H
 #define PROJECTLABORATORY_SHADER_H
 
-#define STRINGIFY(x) #x
-
 #include <stdexcept>
 #include "glad/glad.h"
 #include "glm/glm.hpp"
@@ -37,8 +35,13 @@ namespace Framework {
         }
 
         //TODO: universal setUniform function
-        void setUniform() {
+        void setUniform(const char* name, vec3 kd) const {
+            auto loc = glGetUniformLocation(shaderProgram, name);
+            if (loc < 0) {
+                throw std::runtime_error("ERROR: The following uniform cannot be set\n"s + name);
+            }
 
+            glUniform3f(loc, kd.x, kd.y, kd.z);
         }
 
         ~ShaderProgram() {
