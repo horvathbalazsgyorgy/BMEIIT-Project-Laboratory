@@ -1,14 +1,41 @@
 #ifndef PROJECTLABORATORY_SCENE_H
 #define PROJECTLABORATORY_SCENE_H
 
+#include <iostream>
+#include "scenebuilder.h"
+
+using namespace std;
+
 namespace Framework {
     class Scene {
+        SceneBuilder* builder;
     public:
         Scene() = default;
-        virtual void buildScene() = 0;
-        virtual void drawScene() = 0;
-        virtual void disposeScene() = 0;
-        virtual ~Scene() = default;
+        Scene(SceneBuilder* builder) : builder(builder) {}
+
+        void buildScene() const {
+            if (!builder) {
+                throw std::runtime_error("ERROR:\nBuilder in scene is not set! Can't build.");
+            }
+            builder->build();
+        }
+        void drawScene() const {
+            if (!builder) {
+                throw std::runtime_error("ERROR:\nBuilder in scene is not set! Can't draw.");
+            }
+            builder->draw();
+        }
+        void disposeScene() const {
+            if (!builder) {
+                cout << "Warning!\nBuilder in scene is not set! Can't dispose." << endl;
+                return;
+            }
+            builder->reset();
+        }
+
+        void setBuilder(SceneBuilder* build) {
+            this->builder = build;
+        }
     };
 }
 

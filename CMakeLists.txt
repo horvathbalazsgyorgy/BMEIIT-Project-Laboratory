@@ -27,7 +27,8 @@ add_library(framework
         framework/shaderprogram.h
         framework/shaderloader.h
         framework/material.h
-        framework/model.h)
+        framework/model.h
+        framework/scenebuilder.h)
 target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(ProjectLaboratory src/main.cpp)
