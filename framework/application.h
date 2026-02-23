@@ -1,8 +1,13 @@
-#ifndef PROJECTLABORATORY_CONTEXT_H
-#define PROJECTLABORATORY_CONTEXT_H
+#ifndef PROJECTLABORATORY_APPLICATION_H
+#define PROJECTLABORATORY_APPLICATION_H
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <set>
+
+#include "scene.h"
+
+using namespace std;
 
 namespace Framework {
     class GLApplication {
@@ -11,8 +16,8 @@ namespace Framework {
     public:
         static void initializeGL(int majorVersion, int minorVersion);
         static void createWindow(int height, int width);
-        static void render();
+        static void render(Scene* scene);
     };
 }
 
-#endif //PROJECTLABORATORY_CONTEXT_H
+#endif //PROJECTLABORATORY_APPLICATION_H

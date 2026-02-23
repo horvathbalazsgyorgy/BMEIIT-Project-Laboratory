@@ -23,9 +23,17 @@ add_library(framework
         framework/application.cpp
         framework/application.h
         framework/scene.h
-        framework/mesh.h)
+        framework/mesh.h
+        framework/shaderprogram.h
+        framework/shaderloader.h
+        framework/material.h
+        framework/model.h
+        framework/scenebuilder.h)
 target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+file(COPY src/glsl DESTINATION ${CMAKE_BINARY_DIR})
+
+add_executable(ProjectLaboratory src/main.cpp)
 add_executable(ProjectLaboratory src/main.cpp
         src/test/testmesh.h)
 

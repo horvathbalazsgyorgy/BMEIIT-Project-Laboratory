@@ -3,14 +3,23 @@
 
 using namespace std;
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
-}
+namespace {
+    struct CallbackManager {
+        static inline set<unsigned int> keysPressed;
 
-void exit_key_callback(GLFWwindow* window) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
+        static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+            glViewport(0, 0, width, height);
+        }
+
+        static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+            if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+                glfwSetWindowShouldClose(window, GLFW_TRUE);
+            }
+            if ((mods & GLFW_MOD_SHIFT) == 0) key += 'a' - 'A';
+            if (action == GLFW_PRESS || action == GLFW_REPEAT) keysPressed.insert(key);
+            if (action == GLFW_RELEASE) keysPressed.erase(key);
+        }
+    };
 }
 
 namespace Framework {
@@ -25,26 +34,24 @@ namespace Framework {
         window = glfwCreateWindow(width, height, "", nullptr, nullptr);
         if (window == nullptr) {
             glfwTerminate();
-            throw std::runtime_error("Failed to create GLFW window");
+            throw runtime_error("Error: failed to create GLFW window");
         }
+
         glfwMakeContextCurrent(window);
-        glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+        glfwSetFramebufferSizeCallback(window, CallbackManager::framebuffer_size_callback);
+        glfwSetKeyCallback(window, CallbackManager::key_callback);
 
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-            throw std::runtime_error("Failed to initialize GLAD");
+            throw runtime_error("Error: failed to initialize GLAD");
         }
     }
 
-    void print(int(*func)(int, int));
-
-    void GLApplication::render() {
+    void GLApplication::render(Scene* scene) {
         while (!glfwWindowShouldClose(window)) {
-            exit_key_callback(window);
-
             glClearColor(0.3f, 0.5f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            //scene->update(key_callback);
+            scene->drawScene(CallbackManager::keysPressed);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
