@@ -2,6 +2,7 @@
 #define PROJECTLABORATORY_SHADERLOADER_H
 
 #include <stdexcept>
+#include <string>
 #include <fstream>
 #include "glad/glad.h"
 
@@ -40,13 +41,13 @@ namespace Framework {
             glCompileShader(shaderID);
 
             GLint success, infoLogLength;
-            glGetShaderiv(shaderID, type, &success);
+            glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
             glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
 
             if (!success) {
                 string infoLog(infoLogLength, '\0');
                 glGetShaderInfoLog(shaderID, infoLogLength, nullptr, infoLog.data());
-                throw runtime_error("Error compiling shader: " + to_string(type) + "\n" + infoLog.c_str());
+                throw runtime_error("Error compiling shader: " + std::to_string(type) + "\n" + infoLog);
             }
 
             return shaderID;

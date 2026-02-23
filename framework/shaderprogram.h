@@ -2,6 +2,7 @@
 #define PROJECTLABORATORY_SHADER_H
 
 #include <stdexcept>
+#include <string>
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 
@@ -25,7 +26,7 @@ namespace Framework {
             if (!success) {
                 string infoLog(infoLogLength, '\0');
                 glGetProgramInfoLog(shaderProgram, infoLogLength, nullptr, infoLog.data());
-                throw runtime_error("Error in linking shaders: "s + infoLog.c_str());
+                throw runtime_error("Error in linking shaders: "s + infoLog);
             }
         }
 
@@ -39,7 +40,7 @@ namespace Framework {
             auto loc = glGetUniformLocation(shaderProgram, name);
             if (loc < 0) {
                 throw runtime_error("Error in setting the following uniform: "s + name
-                    + "\nin program: " + to_string(shaderProgram));
+                    + "\nin program: " + std::to_string(shaderProgram));
             }
             glUniform3fv(loc, 1, &kd.x);
         }
