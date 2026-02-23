@@ -3,8 +3,11 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <set>
 
 #include "scene.h"
+
+using namespace std;
 
 namespace Framework {
     class GLApplication {

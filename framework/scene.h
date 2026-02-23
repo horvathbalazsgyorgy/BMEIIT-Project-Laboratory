@@ -2,6 +2,7 @@
 #define PROJECTLABORATORY_SCENE_H
 
 #include <iostream>
+#include <set>
 #include "scenebuilder.h"
 
 using namespace std;
@@ -19,11 +20,11 @@ namespace Framework {
             }
             builder->build();
         }
-        void drawScene() const {
+        void drawScene(const set<unsigned int> &keysPressed) const {
             if (!builder) {
                 throw runtime_error("Error!\n Builder in scene is not set! Can't draw.");
             }
-            builder->draw();
+            builder->draw(keysPressed);
         }
         void disposeScene() const {
             if (!builder) {

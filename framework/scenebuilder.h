@@ -1,6 +1,8 @@
 #ifndef PROJECTLABORATORY_SCENEBUILDER_H
 #define PROJECTLABORATORY_SCENEBUILDER_H
 
+#include <set>
+
 namespace Framework {
     class SceneBuilder {
         virtual void buildPrograms() = 0;
@@ -9,7 +11,7 @@ namespace Framework {
         virtual void buildModels() = 0;
     public:
         virtual void reset() = 0;
-        virtual void draw() = 0;
+        virtual void draw(std::set<unsigned int> keysPressed) = 0;
         void build() {
             reset();
             buildPrograms();
