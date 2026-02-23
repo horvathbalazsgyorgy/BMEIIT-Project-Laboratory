@@ -19,7 +19,7 @@ namespace Framework {
 
             ifstream shaderFile(prefix);
             if (!shaderFile.is_open()) {
-                throw std::runtime_error("ERROR:\nUnable to open shader file or file not found\n");
+                throw runtime_error("Error: unable to open shader file or file not found\n");
             }
 
             string line;
@@ -39,13 +39,14 @@ namespace Framework {
             glShaderSource(shaderID, 1, &code, nullptr);
             glCompileShader(shaderID);
 
-            int success = 1;
-            char infoLog[512];
+            GLint success, infoLogLength;
             glGetShaderiv(shaderID, type, &success);
+            glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
 
             if (!success) {
-                glGetShaderInfoLog(shaderID, 512, nullptr, infoLog);
-                throw std::runtime_error("ERROR: SHADER COMPILATION FAILED\n"s + infoLog);
+                string infoLog(infoLogLength, '\0');
+                glGetShaderInfoLog(shaderID, infoLogLength, nullptr, infoLog.data());
+                throw runtime_error("Error compiling shader: " + to_string(type) + "\n" + infoLog.c_str());
             }
 
             return shaderID;

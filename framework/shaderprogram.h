@@ -11,7 +11,6 @@ using namespace glm;
 namespace Framework {
     class ShaderProgram {
         GLuint shaderProgram;
-        //UniformLoader* loader;
     public:
         ShaderProgram(GLuint vertexShader, GLuint fragmentShader) {
             shaderProgram = glCreateProgram();
@@ -19,29 +18,30 @@ namespace Framework {
             glAttachShader(shaderProgram, fragmentShader);
             glLinkProgram(shaderProgram);
 
-            int success = 1;
-            char infoLog[512];
+            GLint success, infoLogLength;
             glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+            glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &infoLogLength);
 
             if (!success) {
-                glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
-                throw std::runtime_error("ERROR: SHADER LINKING FAILED\n"s + infoLog);
+                string infoLog(infoLogLength, '\0');
+                glGetProgramInfoLog(shaderProgram, infoLogLength, nullptr, infoLog.data());
+                throw runtime_error("Error in linking shaders: "s + infoLog.c_str());
             }
-
-            useShaderProgram();
         }
+
         void useShaderProgram() const {
             glUseProgram(shaderProgram);
         }
 
         //TODO: universal setUniform function
-        void setUniform(const char* name, vec3 kd) const {
+        //TODO: or more setUniform functions
+        void setUniform(const char* name, const vec3 kd) const {
             auto loc = glGetUniformLocation(shaderProgram, name);
             if (loc < 0) {
-                throw std::runtime_error("ERROR: The following uniform cannot be set\n"s + name);
+                throw runtime_error("Error in setting the following uniform: "s + name
+                    + "\nin program: " + to_string(shaderProgram));
             }
-
-            glUniform3f(loc, kd.x, kd.y, kd.z);
+            glUniform3fv(loc, 1, &kd.x);
         }
 
         ~ShaderProgram() {

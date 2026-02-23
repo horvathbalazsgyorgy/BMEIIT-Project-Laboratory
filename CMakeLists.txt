@@ -33,9 +33,7 @@ target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 file(COPY src/glsl DESTINATION ${CMAKE_BINARY_DIR})
 
-add_executable(ProjectLaboratory src/main.cpp
-        src/builder2d.h
-        src/triangle.h)
+add_executable(ProjectLaboratory src/main.cpp)
 
 target_link_libraries(framework PUBLIC glfw glad OpenGL::GL glm)
 

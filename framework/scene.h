@@ -15,19 +15,19 @@ namespace Framework {
 
         void buildScene() const {
             if (!builder) {
-                throw std::runtime_error("ERROR:\nBuilder in scene is not set! Can't build.");
+                throw runtime_error("Error!\n Builder in scene is not set! Can't build.");
             }
             builder->build();
         }
         void drawScene() const {
             if (!builder) {
-                throw std::runtime_error("ERROR:\nBuilder in scene is not set! Can't draw.");
+                throw runtime_error("Error!\n Builder in scene is not set! Can't draw.");
             }
             builder->draw();
         }
         void disposeScene() const {
             if (!builder) {
-                cout << "Warning!\nBuilder in scene is not set! Can't dispose." << endl;
+                cout << "Warning!\n Builder in scene is not set! Can't dispose." << endl;
                 return;
             }
             builder->reset();

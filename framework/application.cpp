@@ -13,6 +13,8 @@ void exit_key_callback(GLFWwindow* window) {
     }
 }
 
+
+
 namespace Framework {
     void GLApplication::initializeGL(int majorVersion, int minorVersion) {
         glfwInit();
@@ -25,13 +27,13 @@ namespace Framework {
         window = glfwCreateWindow(width, height, "", nullptr, nullptr);
         if (window == nullptr) {
             glfwTerminate();
-            throw std::runtime_error("Failed to create GLFW window");
+            throw runtime_error("Error: failed to create GLFW window");
         }
         glfwMakeContextCurrent(window);
         glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-            throw std::runtime_error("Failed to initialize GLAD");
+            throw runtime_error("Error: failed to initialize GLAD");
         }
     }
 
