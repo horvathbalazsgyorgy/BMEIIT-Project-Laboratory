@@ -48,9 +48,6 @@ namespace Framework {
 
     void GLApplication::render(Scene* scene) {
         while (!glfwWindowShouldClose(window)) {
-            glClearColor(0.3f, 0.5f, 0.1f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
-
             scene->drawScene(CallbackManager::keysPressed);
 
             glfwSwapBuffers(window);

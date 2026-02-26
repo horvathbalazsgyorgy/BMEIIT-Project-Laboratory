@@ -36,5 +36,4 @@ file(COPY src/glsl DESTINATION ${CMAKE_BINARY_DIR})
 add_executable(ProjectLaboratory src/main.cpp)
 
 target_link_libraries(framework PUBLIC glfw glad OpenGL::GL glm)
-
 target_link_libraries(ProjectLaboratory PRIVATE framework)

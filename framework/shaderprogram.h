@@ -2,6 +2,7 @@
 #define PROJECTLABORATORY_SHADER_H
 
 #include <stdexcept>
+#include <string>
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 
@@ -25,7 +26,7 @@ namespace Framework {
             if (!success) {
                 string infoLog(infoLogLength, '\0');
                 glGetProgramInfoLog(shaderProgram, infoLogLength, nullptr, infoLog.data());
-                throw runtime_error("Error in linking shaders: "s + infoLog.c_str());
+                throw runtime_error("Error in linking shaders: "s + infoLog);
             }
         }
 

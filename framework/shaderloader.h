@@ -2,6 +2,7 @@
 #define PROJECTLABORATORY_SHADERLOADER_H
 
 #include <stdexcept>
+#include <string>
 #include <fstream>
 #include "glad/glad.h"
 
@@ -46,7 +47,7 @@ namespace Framework {
             if (!success) {
                 string infoLog(infoLogLength, '\0');
                 glGetShaderInfoLog(shaderID, infoLogLength, nullptr, infoLog.data());
-                throw runtime_error("Error compiling shader: " + to_string(type) + "\n" + infoLog.c_str());
+                throw runtime_error("Error compiling shader: " + to_string(type) + "\n" + infoLog);
             }
 
             return shaderID;
