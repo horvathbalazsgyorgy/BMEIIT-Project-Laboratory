@@ -28,7 +28,9 @@ add_library(framework
         framework/shaderloader.h
         framework/material.h
         framework/model.h
-        framework/scenebuilder.h)
+        framework/scenebuilder.h
+        framework/camera.h
+        framework/light.h)
 target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 file(COPY src/glsl DESTINATION ${CMAKE_BINARY_DIR})
