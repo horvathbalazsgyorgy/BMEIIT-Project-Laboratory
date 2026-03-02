@@ -65,8 +65,14 @@ namespace Framework {
     }
 
     void GLApplication::render(Scene* scene) {
+        float timeAtThisFrame = 0.0f;
+        float timeAtLastFrame = 0.0f;
         while (!glfwWindowShouldClose(window)) {
-            scene->drawScene(CallbackManager::keysPressed);
+            timeAtThisFrame = (float)glfwGetTime();
+            float dt = timeAtThisFrame - timeAtLastFrame;
+            timeAtLastFrame = timeAtThisFrame;
+
+            scene->drawScene(dt, CallbackManager::keysPressed);
 
             glfwSwapBuffers(window);
             glfwPollEvents();

@@ -20,11 +20,11 @@ namespace Framework {
             }
             builder->build();
         }
-        void drawScene(const set<unsigned int> &keysPressed) const {
+        void drawScene(float dt, const set<unsigned int> &keysPressed) const {
             if (!builder) {
                 throw runtime_error("Error!\n Builder in scene is not set! Can't draw.");
             }
-            builder->draw(keysPressed);
+            builder->draw(dt, keysPressed);
         }
         void disposeScene() const {
             if (!builder) {
