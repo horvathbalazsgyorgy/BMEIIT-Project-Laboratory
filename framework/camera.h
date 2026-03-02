@@ -2,6 +2,7 @@
 #define PROJECTLABORATORY_CAMERA_H
 
 #include <set>
+#include "mouse.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
@@ -12,33 +13,36 @@ class Camera {
     vec3 position;
     float roll = 0.0f, pitch = 0.0f, yaw = 0.0f;
     float fov = 1.0f, aspect = 1.0f, nearPlane = 1.0f, farPlane = 500.0f;
-    mat4 view, projection, viewProjection, rayDir;
+    float speed = 10.0f;
+    float sensitivity = 0.005f;
 
+    mat4 rotation, view, projection, viewProjection, rayDir;
     vec3 ahead = vec3(0.0f, 0.0f, -1.0f),
          right = vec3(1.0f, 0.0f, 0.0f),
-         vup = vec3(0.0f, 0.0f, 1.0f);
+         vup = vec3(0.0f, 1.0f, 0.0f);
 
-    float speed = 10.0f;
-    bool dragging = false, mouseDown = false;
 public:
     Camera(vec3 position) : position(position) { }
     Camera(vec3 position, float roll, float pitch, float yaw)
         : position(position), roll(roll), pitch(pitch), yaw(yaw) { }
 
-    void update() {
-        vec3 direction = vec3();
-        direction.x = cos(radians(yaw)) * cos(radians(pitch));
-        direction.y = sin(radians(pitch));
-        direction.z = sin(radians(yaw)) * cos(radians(pitch));
-        ahead = normalize(direction);
-        right = normalize(cross(ahead, vup));
-        vup = normalize(cross(right, ahead));
+    void updateTransformation() {
+        rotation = rotate(rotate(rotate(mat4(),
+            roll, vec3(0.0f, 0.0f, -1.0f)),
+            pitch, vec3(1.0f, 0.0f, 0.0f)),
+            yaw, vec3(0.0f, 1.0f, 0.0f));
 
         view = lookAt(position, position + ahead, vup);
         projection = perspective(fov, aspect, nearPlane, farPlane);
         viewProjection = projection * view;
 
         rayDir = inverse(translate(mat4(), position) * viewProjection);
+    }
+
+    void updateCoordinateSystem() {
+        ahead = xyz(xyz0(vec3(0.0f, 0.0f, -1.0f)) * rotation);
+        right = xyz(xyz0(vec3(1.0f, 0.0f, 0.0f)) * rotation);
+        vup = xyz(xyz0(vec3(0.0f, 1.0f, 0.0f)) * rotation);
     }
 
     void setPosition(vec3 pos) {
@@ -48,9 +52,6 @@ public:
         roll = r;
         pitch = p;
         yaw = y;
-    }
-    void setSpeed(float s) {
-        speed = s;
     }
     void setFov(float f) {
         fov = f;
@@ -62,9 +63,26 @@ public:
         nearPlane = n;
         farPlane = f;
     }
+    void setSpeed(float s) {
+        speed = s;
+    }
+    void setSensitivity(float s) {
+        sensitivity = s;
+    }
 
-    //TODO: Look around with mouse
     void move(float dt, std::set<unsigned int> keysPressed) {
+        if (mouse.isMouseDown()) {
+            yaw += mouse.getCursorPos().x * sensitivity;
+            pitch += mouse.getCursorPos().y * sensitivity;
+
+            if (pitch> 3.14f/2.0f) {
+                pitch = 3.14f/2.0f;
+            }
+            if (pitch < -3.14f/2.0f) {
+                pitch = -3.14f/2.0f;
+            }
+        }
+
         if (keysPressed.find('w') != keysPressed.end()) {
             position += ahead * (dt * speed);
         }
@@ -84,7 +102,8 @@ public:
             position += vup * (dt * speed);
         }
 
-        update();
+        updateTransformation();
+        updateCoordinateSystem();
     }
 };
 

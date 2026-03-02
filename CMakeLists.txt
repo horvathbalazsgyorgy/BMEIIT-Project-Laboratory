@@ -30,7 +30,8 @@ add_library(framework
         framework/model.h
         framework/scenebuilder.h
         framework/camera.h
-        framework/light.h)
+        framework/light.h
+        framework/mouse.h)
 target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 file(COPY src/glsl DESTINATION ${CMAKE_BINARY_DIR})

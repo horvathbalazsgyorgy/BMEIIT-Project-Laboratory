@@ -1,6 +1,9 @@
 #include "application.h"
 #include <iostream>
 
+#include "mouse.h"
+#include "glm/glm.hpp"
+
 using namespace std;
 
 namespace {
@@ -18,6 +21,19 @@ namespace {
             if ((mods & GLFW_MOD_SHIFT) == 0) key += 'a' - 'A';
             if (action == GLFW_PRESS || action == GLFW_REPEAT) keysPressed.insert(key);
             if (action == GLFW_RELEASE) keysPressed.erase(key);
+        }
+
+        static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+            if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+                mouse.setMouse(true);
+            }
+            if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+                mouse.setMouse(false);
+            }
+        }
+
+        static void cursor_pos_callback(GLFWwindow* window, double xPos, double yPos) {
+            mouse.setCursor(glm::vec2(xPos, yPos));
         }
     };
 }
@@ -40,6 +56,8 @@ namespace Framework {
         glfwMakeContextCurrent(window);
         glfwSetFramebufferSizeCallback(window, CallbackManager::framebuffer_size_callback);
         glfwSetKeyCallback(window, CallbackManager::key_callback);
+        glfwSetMouseButtonCallback(window, CallbackManager::mouse_button_callback);
+        glfwSetCursorPosCallback(window, CallbackManager::cursor_pos_callback);
 
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
             throw runtime_error("Error: failed to initialize GLAD");
