@@ -12,6 +12,10 @@ target_include_directories(glad PUBLIC libs/glad/include)
 add_library(glm INTERFACE)
 target_include_directories(glm INTERFACE libs/glm)
 
+#stb_image
+add_library(stb_image STATIC libs/stb_image/src/stb_image.cpp)
+target_include_directories(stb_image PUBLIC libs/stb_image/include)
+
 #opengl
 find_package(OpenGL REQUIRED)
 
