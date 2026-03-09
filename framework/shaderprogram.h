@@ -3,15 +3,28 @@
 
 #include <stdexcept>
 #include <string>
+
+#include "uniform.h"
+#include "uniformregistry.h"
 #include "glad/glad.h"
-#include "glm/glm.hpp"
 
 using namespace std;
-using namespace glm;
 
 namespace Framework {
     class ShaderProgram {
         GLuint shaderProgram;
+        UniformRegistry registry;
+        int textureUnit;
+
+        Uniform* queryUniform(const string& name) {
+            Uniform* uniform = registry.query(name);
+            if (uniform->acceptTextureUnit(textureUnit)) {
+                textureUnit++;
+            }
+            return uniform;
+        }
+
+        friend class Material;
     public:
         ShaderProgram(GLuint vertexShader, GLuint fragmentShader) {
             shaderProgram = glCreateProgram();
@@ -28,21 +41,14 @@ namespace Framework {
                 glGetProgramInfoLog(shaderProgram, infoLogLength, nullptr, infoLog.data());
                 throw runtime_error("Error in linking shaders: "s + infoLog);
             }
+
+            registry.gatherUniforms(shaderProgram);
+            textureUnit = 0;
         }
 
-        void useShaderProgram() const {
+        void useShaderProgram() {
+            textureUnit = 0;
             glUseProgram(shaderProgram);
-        }
-
-        //TODO: universal setUniform function
-        //TODO: or more setUniform functions
-        void setUniform(const char* name, const vec3 kd) const {
-            auto loc = glGetUniformLocation(shaderProgram, name);
-            if (loc < 0) {
-                throw runtime_error("Error in setting the following uniform: "s + name
-                    + "\nin program: " + to_string(shaderProgram));
-            }
-            glUniform3fv(loc, 1, &kd.x);
         }
 
         ~ShaderProgram() {

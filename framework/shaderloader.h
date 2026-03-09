@@ -41,7 +41,7 @@ namespace Framework {
             glCompileShader(shaderID);
 
             GLint success, infoLogLength;
-            glGetShaderiv(shaderID, type, &success);
+            glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
             glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
 
             if (!success) {

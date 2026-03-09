@@ -12,5 +12,8 @@
 #include "scenebuilder.h"
 #include "shaderloader.h"
 #include "shaderprogram.h"
+#include "texture.h"
+#include "uniform.h"
+#include "uniformregistry.h"
 
 #endif //PROJECTLABORATORY_FRAMEWORK_H
