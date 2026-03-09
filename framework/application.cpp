@@ -33,7 +33,7 @@ namespace {
         }
 
         static void cursor_pos_callback(GLFWwindow* window, double xPos, double yPos) {
-            mouse.setCursor(glm::vec2(xPos, yPos));
+            mouse.setCursor(glm::vec2((float)xPos, (float)yPos));
         }
     };
 }

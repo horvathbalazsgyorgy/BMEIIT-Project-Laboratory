@@ -25,6 +25,7 @@ namespace Framework {
         }
 
         friend class Material;
+        friend class Camera;
     public:
         ShaderProgram(GLuint vertexShader, GLuint fragmentShader) {
             shaderProgram = glCreateProgram();
