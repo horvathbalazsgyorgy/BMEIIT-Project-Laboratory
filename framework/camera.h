@@ -1,8 +1,9 @@
 #ifndef PROJECTLABORATORY_CAMERA_H
 #define PROJECTLABORATORY_CAMERA_H
 
-#include <complex>
 #include <set>
+#include <vector>
+#include <utility>
 #include "mouse.h"
 #include "uniform.h"
 #include "shaderprogram.h"
@@ -10,11 +11,12 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 using namespace glm;
+using namespace std;
 
 namespace Framework {
     //NOTE: Prone to changes
     class Camera {
-        ShaderProgram* program;
+        vector<ShaderProgram*> programs;
         vec3 position;
         float roll = 0.0f, pitch = 0.0f, yaw = -90.0f;
         float fov = radians(45.0f), aspect = 1.0f, nearPlane = 0.1f, farPlane = 1000.0f;
@@ -25,12 +27,26 @@ namespace Framework {
         vec3 ahead = vec3(0.0f, 0.0f, -1.0f),
              right = vec3(1.0f, 0.0f, 0.0f),
              vup = vec3(0.0f, 1.0f, 0.0f);
+
+        Uniform* searchUniform(const string& name) {
+            for (auto* program : programs) {
+                try {
+                    return program->queryUniform(name);
+                } catch (exception& e) {
+                    if (program == programs.back()) {
+                        throw runtime_error(e.what());
+                    }
+                }
+            }
+            return nullptr;
+        }
+
     public:
-        Camera(ShaderProgram* program, vec3 position) : position(position), program(program) {
+        Camera(vector<ShaderProgram*> programs, vec3 position) : position(position), programs(std::move(programs)) {
             update();
         }
-        Camera(ShaderProgram* program, vec3 position, float roll, float pitch, float yaw)
-            : program(program), position(position), roll(roll), pitch(pitch), yaw(yaw) {
+        Camera(vector<ShaderProgram*> programs, vec3 position, float roll, float pitch, float yaw)
+            : programs(std::move(programs)), position(position), roll(roll), pitch(pitch), yaw(yaw) {
             update();
         }
 
@@ -39,7 +55,7 @@ namespace Framework {
             projection = perspective(fov, aspect, nearPlane, farPlane);
             viewProjection = projection * view;
 
-            rayDir = inverse(translate(mat4(1.0f), position) * viewProjection);
+            rayDir = inverse(translate(viewProjection, position));
         }
 
         mat4 getView() {
@@ -79,7 +95,7 @@ namespace Framework {
             sensitivity = s;
         }
 
-        void move(float dt, std::set<unsigned int> keysPressed) {
+        void move(float dt, set<unsigned int> keysPressed) {
             if (mouse.isMouseDown()) {
                 vec2 delta = mouse.getMouseDelta();
                 yaw += delta.x * sensitivity;
@@ -126,7 +142,7 @@ namespace Framework {
         Uniform* operator[](const string& name) {
             string prefix = "camera.";
             prefix.append(name);
-            return program->queryUniform(prefix);
+            return searchUniform(prefix);
         }
     };
 }
