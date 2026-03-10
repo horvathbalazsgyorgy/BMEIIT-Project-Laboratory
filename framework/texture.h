@@ -16,10 +16,7 @@ namespace Framework {
         Texture() {
             glGenTextures(1, &texture);
         }
-        void bindTexture(int samplerIndex) const {
-            glActiveTexture(GL_TEXTURE0 + samplerIndex);
-            glBindTexture(GL_TEXTURE_2D, texture);
-        }
+        virtual void bindTexture(int samplerIndex) const = 0;
         virtual ~Texture() = default;
     };
 
@@ -35,13 +32,16 @@ namespace Framework {
             }
             glBindTexture(GL_TEXTURE_2D, texture);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glGenerateMipmap(GL_TEXTURE_2D);
             glBindTexture(GL_TEXTURE_2D, 0);
             stbi_image_free(data);
+        }
+
+        void bindTexture(int samplerIndex) const override {
+            glActiveTexture(GL_TEXTURE0 + samplerIndex);
+            glBindTexture(GL_TEXTURE_2D, texture);
         }
     };
 
@@ -62,8 +62,16 @@ namespace Framework {
             }
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
             glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+        }
+
+        void bindTexture(int samplerIndex) const override {
+            glActiveTexture(GL_TEXTURE0 + samplerIndex);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
         }
     };
 }
