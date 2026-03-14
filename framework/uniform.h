@@ -88,7 +88,7 @@ namespace Framework {
                 throw invalid_argument("Incorrect amount of parameters for uniform"
                                     " \"" + name + "\", expected " + to_string(Size) +
                                     " but found " + to_string(N) + ".");
-            float values[N];
+            float values[Size];
             try {
                 for (int i = 0; i < N; i++) {
                     values[i] = get<float>(primitives[i]);
