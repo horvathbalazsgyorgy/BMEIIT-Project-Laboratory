@@ -11,7 +11,7 @@ namespace Framework {
         virtual void buildModels() = 0;
     public:
         virtual void reset() = 0;
-        virtual void draw(std::set<unsigned int> keysPressed) = 0;
+        virtual void draw(float dt, std::set<unsigned int> keysPressed) = 0;
         void build() {
             reset();
             buildPrograms();

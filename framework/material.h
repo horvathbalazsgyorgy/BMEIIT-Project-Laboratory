@@ -1,26 +1,29 @@
 #ifndef PROJECTLABORATORY_MATERIAL_H
 #define PROJECTLABORATORY_MATERIAL_H
 
+#include "uniform.h"
 #include "shaderprogram.h"
-#include "glm/vec3.hpp"
 
 using namespace glm;
 
 namespace Framework {
+    //NOTE: Prone to changes
+    //TODO: Custom glsl struct name
     class Material {
-        vec3 kd;
-        ShaderProgram* shaderProgram;
+        ShaderProgram* program;
     public:
-        Material(ShaderProgram* program, vec3 kd) :
-            kd(kd),
-            shaderProgram(program) {}
-
-        void set(const char* name, vec3 color) {
-            shaderProgram->setUniform(name, color);
+        Material(ShaderProgram* program) : program(program) {
+            program->useShaderProgram();
         }
 
         void draw() {
-            shaderProgram->useShaderProgram();
+            program->useShaderProgram();
+        }
+
+        Uniform* operator[](const string& name) {
+            string prefix = "material.";
+            prefix.append(name);
+            return program->queryUniform(prefix);
         }
     };
 }

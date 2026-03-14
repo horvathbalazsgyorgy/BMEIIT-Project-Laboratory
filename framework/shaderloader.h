@@ -47,7 +47,7 @@ namespace Framework {
             if (!success) {
                 string infoLog(infoLogLength, '\0');
                 glGetShaderInfoLog(shaderID, infoLogLength, nullptr, infoLog.data());
-                throw runtime_error("Error compiling shader: " + std::to_string(type) + "\n" + infoLog);
+                throw runtime_error("Error compiling shader: " + to_string(type) + "\n" + infoLog);
             }
 
             return shaderID;
