@@ -4,8 +4,8 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "application.h"
-#include "uniformsource.h"
+#include "../opengl/application.h"
+#include "../uniform/uniformsource.h"
 #include "glm/glm.hpp"
 
 namespace Framework {

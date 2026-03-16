@@ -2,7 +2,7 @@
 #define PROJECTLABORATORY_LIGHT_H
 
 #include <string>
-#include "uniformsource.h"
+#include "../uniform/uniformsource.h"
 #include "glm/glm.hpp"
 
 //NOTE: Prone to changes

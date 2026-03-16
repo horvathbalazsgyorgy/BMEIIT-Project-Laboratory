@@ -2,7 +2,7 @@
 #define PROJECTLABORATORY_SHADER_H
 
 #include <string>
-#include "uniformregistry.h"
+#include "../uniform/uniformregistry.h"
 #include "glad/glad.h"
 
 namespace Framework {

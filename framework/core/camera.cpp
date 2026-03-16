@@ -1,8 +1,8 @@
 #include "camera.h"
 
 #include <stdexcept>
-#include "mouse.h"
-#include "shaderprogram.h"
+#include "../utility/mouse.h"
+#include "../opengl/shaderprogram.h"
 #include "glm/gtc/matrix_transform.hpp"
 
 namespace Framework {

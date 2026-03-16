@@ -1,7 +1,7 @@
 #include "material.h"
 
 #include <stdexcept>
-#include "shaderprogram.h"
+#include "../opengl/shaderprogram.h"
 
 namespace Framework {
     Material::Material(ShaderProgram* program, const std::string& prefix) : UniformSource(prefix), program(program) {

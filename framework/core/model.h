@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "uniformsource.h"
+#include "../uniform/uniformsource.h"
 #include "glm/glm.hpp"
 
 namespace Framework {

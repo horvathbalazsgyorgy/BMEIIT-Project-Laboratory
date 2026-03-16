@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include "material.h"
 #include "mesh.h"
-#include "shaderprogram.h"
+#include "../opengl/shaderprogram.h"
 #include "glm/gtc/matrix_transform.hpp"
 
 namespace Framework {

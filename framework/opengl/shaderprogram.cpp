@@ -1,6 +1,6 @@
 #include "shaderprogram.h"
 
-#include "uniform.h"
+#include "../uniform/uniform.h"
 #include <stdexcept>
 
 namespace Framework {

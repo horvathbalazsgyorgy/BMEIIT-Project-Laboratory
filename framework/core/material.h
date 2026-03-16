@@ -2,7 +2,7 @@
 #define PROJECTLABORATORY_MATERIAL_H
 
 #include <string>
-#include "uniformsource.h"
+#include "../uniform/uniformsource.h"
 
 namespace Framework {
     class ShaderProgram;

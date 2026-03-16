@@ -1,19 +1,19 @@
 #ifndef PROJECTLABORATORY_FRAMEWORK_H
 #define PROJECTLABORATORY_FRAMEWORK_H
 
-#include "application.h"
-#include "camera.h"
-#include "light.h"
-#include "material.h"
-#include "mesh.h"
-#include "model.h"
-#include "mouse.h"
-#include "scene.h"
-#include "scenebuilder.h"
-#include "shaderloader.h"
-#include "shaderprogram.h"
-#include "texture.h"
-#include "uniform.h"
-#include "uniformregistry.h"
+#include "opengl/application.h"
+#include "core/camera.h"
+#include "core/light.h"
+#include "core/material.h"
+#include "core/mesh.h"
+#include "core/model.h"
+#include "utility/mouse.h"
+#include "scene/scene.h"
+#include "scene/scenebuilder.h"
+#include "opengl/loader/shaderloader.h"
+#include "opengl/shaderprogram.h"
+#include "opengl/loader/texture.h"
+#include "uniform/uniform.h"
+#include "uniform/uniformregistry.h"
 
 #endif //PROJECTLABORATORY_FRAMEWORK_H

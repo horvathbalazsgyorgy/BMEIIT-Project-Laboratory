@@ -2,8 +2,8 @@
 
 #include <set>
 #include <stdexcept>
-#include "scene.h"
-#include "mouse.h"
+#include "../scene/scene.h"
+#include "../utility/mouse.h"
 #include "glm/vec2.hpp"
 
 namespace {

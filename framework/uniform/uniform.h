@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <concepts>
 
-#include "texture.h"
+#include "../opengl/loader/texture.h"
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
