@@ -1,16 +1,18 @@
 #include "application.h"
-#include <iostream>
 
-#include "mouse.h"
-#include "glm/glm.hpp"
-
-using namespace std;
+#include <set>
+#include <stdexcept>
+#include "../scene/scene.h"
+#include "../utility/mouse.h"
+#include "glm/vec2.hpp"
 
 namespace {
     struct CallbackManager {
-        static inline set<unsigned int> keysPressed;
+        static inline std::set<unsigned int> keysPressed;
 
         static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+            Framework::WindowSize::width = width;
+            Framework::WindowSize::height = height;
             glViewport(0, 0, width, height);
         }
 
@@ -25,15 +27,15 @@ namespace {
 
         static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
             if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-                mouse.setMouse(true);
+                Framework::mouse.setMouse(true);
             }
             if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-                mouse.setMouse(false);
+                Framework::mouse.setMouse(false);
             }
         }
 
         static void cursor_pos_callback(GLFWwindow* window, double xPos, double yPos) {
-            mouse.setCursor(glm::vec2((float)xPos, (float)yPos));
+            Framework::mouse.setCursor(glm::vec2((float)xPos, (float)yPos));
         }
     };
 }
@@ -46,11 +48,13 @@ namespace Framework {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     }
 
-    void GLApplication::createWindow(int height, int width) {
+    void GLApplication::createWindow(int width, int height) {
+        WindowSize::width = width;
+        WindowSize::height = height;
         window = glfwCreateWindow(width, height, "", nullptr, nullptr);
         if (window == nullptr) {
             glfwTerminate();
-            throw runtime_error("Error: failed to create GLFW window");
+            throw std::runtime_error("Error: failed to create GLFW window");
         }
 
         glfwMakeContextCurrent(window);
@@ -60,7 +64,7 @@ namespace Framework {
         glfwSetCursorPosCallback(window, CallbackManager::cursor_pos_callback);
 
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-            throw runtime_error("Error: failed to initialize GLAD");
+            throw std::runtime_error("Error: failed to initialize GLAD");
         }
     }
 
