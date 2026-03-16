@@ -2,75 +2,53 @@
 #define PROJECTLABORATORY_CAMERA_H
 
 #include <set>
+#include <string>
 #include <vector>
-#include <utility>
-#include "mouse.h"
-#include "uniform.h"
-#include "shaderprogram.h"
+#include "application.h"
+#include "uniformsource.h"
 #include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-
-using namespace glm;
-using namespace std;
 
 namespace Framework {
-    //NOTE: Prone to changes
-    class Camera {
-        vector<ShaderProgram*> programs;
-        vec3 position;
+    class ShaderProgram;
+    class Uniform;
+
+    class Camera : public UniformSource {
+        std::vector<ShaderProgram*> programs;
+        glm::vec3 position;
         float roll = 0.0f, pitch = 0.0f, yaw = -90.0f;
-        float fov = radians(45.0f), aspect = 1.0f, nearPlane = 0.1f, farPlane = 1000.0f;
+        float fov = glm::radians(45.0f),
+            aspect = (float)WindowSize::width/(float)WindowSize::height,
+            nearPlane = 0.1f,
+            farPlane = 1000.0f;
         float speed = 10.0f;
         float sensitivity = 0.1f;
 
-        mat4 view = mat4(1.0f), projection = mat4(1.0f), viewProjection, rayDir;
-        vec3 ahead = vec3(0.0f, 0.0f, -1.0f),
-             right = vec3(1.0f, 0.0f, 0.0f),
-             vup = vec3(0.0f, 1.0f, 0.0f);
+        glm::mat4 view = glm::mat4(1.0f), projection = glm::mat4(1.0f), viewProjection, rayDir;
+        glm::vec3 ahead = glm::vec3(0.0f, 0.0f, -1.0f),
+             right = glm::vec3(1.0f, 0.0f, 0.0f),
+             vup = glm::vec3(0.0f, 1.0f, 0.0f);
 
-        Uniform* searchUniform(const string& name) {
-            for (auto* program : programs) {
-                try {
-                    return program->queryUniform(name);
-                } catch (exception& e) {
-                    if (program == programs.back()) {
-                        throw runtime_error(e.what());
-                    }
-                }
-            }
-            return nullptr;
-        }
-
+        Uniform* searchUniform(const std::string& name) const;
     public:
-        Camera(vector<ShaderProgram*> programs, vec3 position) : position(position), programs(std::move(programs)) {
+        Camera(std::vector<ShaderProgram*> programs, glm::vec3 position, const std::string& prefix = "camera")
+            : UniformSource(prefix), programs(std::move(programs)), position(position) {update();
+        }
+        Camera(std::vector<ShaderProgram*> programs, glm::vec3 position, float roll, float pitch, float yaw, const std::string& prefix = "camera")
+            : UniformSource(prefix), programs(std::move(programs)), position(position), roll(roll), pitch(pitch), yaw(yaw) {
             update();
         }
-        Camera(vector<ShaderProgram*> programs, vec3 position, float roll, float pitch, float yaw)
-            : programs(std::move(programs)), position(position), roll(roll), pitch(pitch), yaw(yaw) {
-            update();
+
+        void update();
+        void move(float dt, const std::set<unsigned int> &keysPressed);
+        Uniform* operator[](const std::string& name) const override;
+
+        glm::mat4 getViewProjMatrix() const {
+            return viewProjection;
         }
-
-        void update() {
-            view = lookAt(position, position + ahead, vup);
-            projection = perspective(fov, aspect, nearPlane, farPlane);
-            viewProjection = projection * view;
-
-            rayDir = inverse(translate(viewProjection, position));
-        }
-
-        mat4 getView() {
-            return lookAt(position, position + ahead, vup);
-        }
-
-        mat4 getProjection() {
-            return perspective(fov, aspect, nearPlane, farPlane);
-        }
-
-        mat4 getRayDirMatrix() {
+        glm::mat4 getRayDirMatrix() const {
             return rayDir;
         }
-
-        void setPosition(vec3 pos) {
+        void setPosition(glm::vec3 pos) {
             this->position = pos;
         }
         void setRotation(float r = 0.0f, float p = 0.0f, float y = 0.0f) {
@@ -95,55 +73,7 @@ namespace Framework {
             sensitivity = s;
         }
 
-        void move(float dt, set<unsigned int> keysPressed) {
-            if (mouse.isMouseDown()) {
-                vec2 delta = mouse.getMouseDelta();
-                yaw += delta.x * sensitivity;
-                pitch += delta.y * sensitivity;
-
-                if (pitch > 89.9f) {
-                    pitch = 89.9f;
-                }
-                if (pitch < -89.9f) {
-                    pitch = -89.9f;
-                }
-            }
-
-            if (keysPressed.find('w') != keysPressed.end()) {
-                position += ahead * (dt * speed);
-            }
-            if (keysPressed.find('s') != keysPressed.end()) {
-                position -= ahead * (dt * speed);
-            }
-            if (keysPressed.find('a') != keysPressed.end()) {
-                position -= right * (dt * speed);
-            }
-            if (keysPressed.find('d') != keysPressed.end()) {
-                position += right * (dt * speed);
-            }
-            if (keysPressed.find('q') != keysPressed.end()) {
-                position -= vup * (dt * speed);
-            }
-            if (keysPressed.find('e') != keysPressed.end()) {
-                position += vup * (dt * speed);
-            }
-
-            vec3 dir;
-            dir.x = cos(radians(yaw)) * cos(radians(pitch));
-            dir.y = sin(radians(pitch));
-            dir.z = sin(radians(yaw)) * cos(radians(pitch));
-            ahead = normalize(dir);
-            right = normalize(cross(dir, vec3(0.0f, 1.0f, 0.0f)));
-            vup = normalize(cross(right, ahead));
-
-            update();
-        }
-
-        Uniform* operator[](const string& name) {
-            string prefix = "camera.";
-            prefix.append(name);
-            return searchUniform(prefix);
-        }
+        ~Camera() override = default;
     };
 }
 

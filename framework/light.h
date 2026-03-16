@@ -1,18 +1,23 @@
 #ifndef PROJECTLABORATORY_LIGHT_H
 #define PROJECTLABORATORY_LIGHT_H
 
+#include <string>
+#include "uniformsource.h"
 #include "glm/glm.hpp"
 
-using namespace glm;
-
 //NOTE: Prone to changes
-class Light {
-    vec4 position;
-    vec3 density;
-public:
-    Light(vec4 position, vec3 density) : position(position), density(density) { }
+namespace Framework {
+    class Light : public UniformSource {
+        glm::vec4 position;
+        glm::vec3 density;
+    public:
+        Light(glm::vec4 position, glm::vec3 density, const std::string& prefix = "light")
+            : UniformSource(prefix), position(position), density(density) { }
 
-    void set();
-};
+        //TODO: Implementation (need program for that)
+        Uniform* operator[](const std::string& name) const override;
+        ~Light() override = default;
+    };
+}
 
 #endif //PROJECTLABORATORY_LIGHT_H

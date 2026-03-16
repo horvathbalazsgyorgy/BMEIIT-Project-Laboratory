@@ -21,7 +21,15 @@ find_package(OpenGL REQUIRED)
 
 #framework
 add_library(framework
-        framework/application.cpp)
+        framework/application.cpp
+        framework/camera.cpp
+        framework/material.cpp
+        framework/model.cpp
+        framework/scene.cpp
+        framework/shaderloader.cpp
+        framework/shaderprogram.cpp
+        framework/texture.cpp
+        framework/uniformregistry.cpp)
 target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(framework PUBLIC cxx_std_20)
 set_target_properties(framework PROPERTIES CXX_EXTENSIONS OFF)

@@ -1,46 +1,40 @@
 #ifndef PROJECTLABORATORY_MODEL_H
 #define PROJECTLABORATORY_MODEL_H
 
-#include "material.h"
-#include "mesh.h"
-#include "uniform.h"
+#include <string>
+#include <vector>
+#include "uniformsource.h"
 #include "glm/glm.hpp"
 
-using namespace glm;
-
 namespace Framework {
-    class Model {
-        Mesh* mesh;
-        Material* material;
+    class ShaderProgram;
+    class Uniform;
+    class Mesh;
+    class Material;
+
+    class Model : public UniformSource {
+        glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+        glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
+        glm::mat4 modelMatrix;
+    protected:
         ShaderProgram* program;
-
-        vec3 position;
-        vec3 scale = vec3(1.0f, 1.0f, 1.0f);
-        mat4 modelMatrix;
+        std::vector<Mesh*> meshes;
+        std::vector<Material*> materials;
     public:
-        Model(ShaderProgram* program, Mesh* mesh, Material* material, vec3 initialPos) :
-            program(program), mesh(mesh), material(material), position(initialPos) { }
+        Model(ShaderProgram* program, const std::string& prefix = "model");
 
-        mat4 getModelMatrix() {
-            return modelMatrix;
-        }
+        Model(ShaderProgram* program, Mesh* mesh, Material* material, glm::vec3 initPosition, const std::string& prefix = "model") :
+            UniformSource(prefix), position(initPosition), program(program), meshes{mesh}, materials{material} { }
 
-        void update() {
-            modelMatrix = mat4(1.0f);
-            modelMatrix = glm::scale(modelMatrix, scale);
-            modelMatrix = translate(modelMatrix, position);
-        }
+        Model(ShaderProgram* program, std::vector<Mesh*> meshes, std::vector<Material*> materials, const std::string& prefix = "model") :
+            UniformSource(prefix), program(program), meshes(std::move(meshes)), materials(std::move(materials)) { }
 
-        void draw() {
-            material->draw();
-            mesh->draw();
-        }
+        glm::mat4 getModelMatrix() { return modelMatrix; }
 
-        Uniform* operator[](const string& name) {
-            string prefix = "model.";
-            prefix.append(name);
-            return program->queryUniform(prefix);
-        }
+        void update();
+        virtual void draw();
+        Uniform* operator[](const std::string& name) const override;
+        ~Model() override = default;
     };
 }
 

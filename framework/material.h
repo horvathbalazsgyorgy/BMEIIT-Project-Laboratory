@@ -1,30 +1,20 @@
 #ifndef PROJECTLABORATORY_MATERIAL_H
 #define PROJECTLABORATORY_MATERIAL_H
 
-#include "uniform.h"
-#include "shaderprogram.h"
-
-using namespace glm;
+#include <string>
+#include "uniformsource.h"
 
 namespace Framework {
-    //NOTE: Prone to changes
-    //TODO: Custom glsl struct name
-    class Material {
+    class ShaderProgram;
+    class Uniform;
+
+    class Material : public UniformSource {
         ShaderProgram* program;
     public:
-        Material(ShaderProgram* program) : program(program) {
-            program->useShaderProgram();
-        }
-
-        void draw() {
-            program->useShaderProgram();
-        }
-
-        Uniform* operator[](const string& name) {
-            string prefix = "material.";
-            prefix.append(name);
-            return program->queryUniform(prefix);
-        }
+        Material(ShaderProgram* program, const std::string& prefix = "material");
+        virtual void draw();
+        Uniform* operator[](const std::string& name) const override;
+        ~Material() override = default;
     };
 }
 
