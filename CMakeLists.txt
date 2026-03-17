@@ -54,8 +54,7 @@ file(COPY src/resources DESTINATION ${CMAKE_BINARY_DIR})
 
 add_executable(ProjectLaboratory
         src/main.cpp
-        src/loader/assimpmodel.cpp
-        src/test/builder3d.cpp)
+        src/loader/assimpmodel.cpp)
 
 target_link_libraries(framework PUBLIC glfw glad OpenGL::GL glm stb_image)
 target_link_libraries(ProjectLaboratory PRIVATE framework assimp::assimp)
