@@ -46,7 +46,12 @@ void AssimpModel::initAssimpModel(const std::string& path, const std::vector<Tex
 
 void AssimpModel::load(const std::string& filePath) {
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile(filePath.c_str(), aiProcess_Triangulate | aiProcess_FlipUVs);
+    const aiScene *scene = importer.ReadFile(filePath.c_str(),
+        aiProcess_Triangulate
+        | aiProcess_CalcTangentSpace
+        | aiProcess_GenSmoothNormals
+        | aiProcess_JoinIdenticalVertices
+        | aiProcess_PreTransformVertices);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
         //TODO: Unified Logger class in Framework to get rid of unnecessary exceptions like below
@@ -94,6 +99,20 @@ AssimpMesh* AssimpModel::processMesh(aiMesh* mesh, const aiScene* scene) {
             vertex.texCoord = texCoord;
         }else {
             vertex.texCoord = glm::vec2(0.0f, 0.0f);
+        }
+
+        if (mesh->HasTangentsAndBitangents()) {
+            glm::vec3 tangent;
+            tangent.x = mesh->mTangents[i].x;
+            tangent.y = mesh->mTangents[i].y;
+            tangent.z = mesh->mTangents[i].z;
+            vertex.tangent = tangent;
+
+            glm::vec3 bitangent;
+            bitangent.x = mesh->mBitangents[i].x;
+            bitangent.y = mesh->mBitangents[i].y;
+            bitangent.z = mesh->mBitangents[i].z;
+            vertex.bitangent = bitangent;
         }
 
         vertices.push_back(vertex);
