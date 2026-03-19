@@ -44,6 +44,22 @@ void AssimpModel::initAssimpModel(const std::string& path, const std::vector<Tex
     load(path);
 }
 
+Material *AssimpModel::makeMaterial(std::unordered_map<std::string, std::string> &paths) {
+    for (auto material : materials) {
+        //It is certainly all AssimpMaterial stored in materials
+        if (static_cast<AssimpMaterial*>(material)->compare(paths)) {
+            return material;
+        }
+    }
+
+    auto material = new AssimpMaterial(program);
+    for (const auto& [name, path] : paths) {
+        material->addTexture(name, path, loadedTextures[path].get());
+    }
+    materials.push_back(material);
+    return material;
+}
+
 void AssimpModel::load(const std::string& filePath) {
     Assimp::Importer importer;
     const aiScene *scene = importer.ReadFile(filePath.c_str(),
@@ -125,31 +141,28 @@ AssimpMesh* AssimpModel::processMesh(aiMesh* mesh, const aiScene* scene) {
         }
     }
 
-    auto* material = new AssimpMaterial(program);
+    std::unordered_map<std::string, std::string> currentPaths;
     aiMaterial* assimpMaterial = scene->mMaterials[mesh->mMaterialIndex];
     for (auto type : textureTypes) {
-        processMaterial(material, assimpMaterial, AssimpUniformName::toAssimpTexture(type), uniformNameMapping[type]);
+        processTextureType(assimpMaterial, AssimpUniformName::toAssimpTexture(type), uniformNameMapping[type], currentPaths);
     }
-    materials.push_back(material);
-    return new AssimpMesh(vertices, indices);
+
+    auto material = makeMaterial(currentPaths);
+    return new AssimpMesh(vertices, indices, material);
 }
 
-void AssimpModel::processMaterial(AssimpMaterial* material, aiMaterial* assimpMat, int type, const std::string& nameMapping) {
+void AssimpModel::processTextureType(aiMaterial* assimpMat, int type, const std::string& nameMapping, std::unordered_map<std::string, std::string>& paths) {
     int textureIncrement = 1;
     for (unsigned int i = 0; i < assimpMat->GetTextureCount((aiTextureType)type); i++) {
         aiString textureName;
         assimpMat->GetTexture((aiTextureType)type, i, &textureName);
         std::string texturePath = directory + '/' + textureName.C_Str();
-
         std::string uniformName = nameMapping + std::to_string(textureIncrement);
+        paths[uniformName] = texturePath;
+
         auto it = loadedTextures.find(texturePath);
-        if (it != loadedTextures.end()) {
-            if (auto texture = it->second.get()) {
-                material->addTexture(uniformName, texture);
-            }
-        }else {
+        if (it == loadedTextures.end()) {
             loadedTextures[texturePath] = make_unique<Texture2D>(texturePath);
-            material->addTexture(uniformName, loadedTextures[texturePath].get());
         }
         textureIncrement++;
     }
