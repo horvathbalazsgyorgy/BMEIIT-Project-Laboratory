@@ -48,13 +48,18 @@ public:
         sizeof...(Args) >= 1 &&
         (std::same_as<Args, TextureType> && ...)
     )
-    AssimpModel(ShaderProgram* program, const std::string& path, Args... args) : Model(program) {
+    AssimpModel(ShaderProgram* program,
+        const std::string& path,
+        const glm::vec3& position,
+        const glm::vec3& scale,
+        Args... args)
+    : Model(program, position, scale) {
         initAssimpModel(path, {args...});
     }
 
     void load(const std::string& filePath);
-    void processNode(aiNode* node, const aiScene* scene);
-    AssimpMesh* processMesh(aiMesh* mesh, const aiScene* scene);
+    void processNode(aiNode* node, const aiScene* scene, const glm::mat4& modelMatrix);
+    AssimpMesh* processMesh(aiMesh* mesh, const aiScene* scene, const glm::mat4& modelMatrix);
     void processTextureType(
         aiMaterial* assimpMat,
         int type,

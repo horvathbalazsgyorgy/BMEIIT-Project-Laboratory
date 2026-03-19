@@ -8,6 +8,15 @@
 #include "assimp/material.h"
 #include "glm/glm.hpp"
 
+glm::mat4 aiMatrix4x4ToGlm4x4(const aiMatrix4x4& aiMatrix) {
+    return glm::mat4(
+        aiMatrix.a1, aiMatrix.b1, aiMatrix.c1, aiMatrix.d1,
+        aiMatrix.a2, aiMatrix.b2, aiMatrix.c2,  aiMatrix.d2,
+        aiMatrix.a3, aiMatrix.b3, aiMatrix.c3, aiMatrix.d3,
+        aiMatrix.a4, aiMatrix.b4, aiMatrix.c4, aiMatrix.d4
+    );
+}
+
 void AssimpUniformName::init() {
     //NOTE: Prone to changes
     nameMapping[DIFFUSE] = "diffuseMap";
@@ -66,46 +75,47 @@ void AssimpModel::load(const std::string& filePath) {
         aiProcess_Triangulate
         | aiProcess_CalcTangentSpace
         | aiProcess_GenSmoothNormals
-        | aiProcess_JoinIdenticalVertices
-        | aiProcess_PreTransformVertices);
+        | aiProcess_JoinIdenticalVertices);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
         //TODO: Unified Logger class in Framework to get rid of unnecessary exceptions like below
         throw std::runtime_error("Error loading Assimp model (" + filePath + "): " + importer.GetErrorString());
 
     directory = filePath.substr(0, filePath.find_last_of('/'));
-    processNode(scene->mRootNode, scene);
+    processNode(scene->mRootNode, scene, glm::mat4(1.0f));
 }
 
-void AssimpModel::processNode(aiNode* node, const aiScene* scene) {
+void AssimpModel::processNode(aiNode* node, const aiScene* scene, const glm::mat4& modelMatrix) {
+    glm::mat4 transformation = modelMatrix * aiMatrix4x4ToGlm4x4(node->mTransformation);
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        meshes.push_back(processMesh(mesh, scene));
+        meshes.push_back(processMesh(mesh, scene, transformation));
     }
 
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        processNode(node->mChildren[i], scene);
+        processNode(node->mChildren[i], scene, transformation);
     }
 }
 
-AssimpMesh* AssimpModel::processMesh(aiMesh* mesh, const aiScene* scene) {
+AssimpMesh* AssimpModel::processMesh(aiMesh* mesh, const aiScene* scene, const glm::mat4& modelMatrix) {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
+    glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(modelMatrix)));
 
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-        Vertex vertex{};
+        Vertex vertex;
         glm::vec3 position;
         position.x = mesh->mVertices[i].x;
         position.y = mesh->mVertices[i].y;
         position.z = mesh->mVertices[i].z;
-        vertex.position = position;
+        vertex.position = glm::xyz(modelMatrix * glm::vec4(position, 1.0f));
 
         if (mesh->HasNormals()) {
             glm::vec3 normal;
             normal.x = mesh->mNormals[i].x;
             normal.y = mesh->mNormals[i].y;
             normal.z = mesh->mNormals[i].z;
-            vertex.normal = normal;
+            vertex.normal = glm::normalize(normalMatrix * normal);
         }
 
         if (mesh->mTextureCoords[0]) {
@@ -122,13 +132,13 @@ AssimpMesh* AssimpModel::processMesh(aiMesh* mesh, const aiScene* scene) {
             tangent.x = mesh->mTangents[i].x;
             tangent.y = mesh->mTangents[i].y;
             tangent.z = mesh->mTangents[i].z;
-            vertex.tangent = tangent;
+            vertex.tangent = glm::normalize(glm::mat3(modelMatrix) * tangent);
 
             glm::vec3 bitangent;
             bitangent.x = mesh->mBitangents[i].x;
             bitangent.y = mesh->mBitangents[i].y;
             bitangent.z = mesh->mBitangents[i].z;
-            vertex.bitangent = bitangent;
+            vertex.bitangent = glm::normalize(glm::mat3(modelMatrix) * bitangent);
         }
 
         vertices.push_back(vertex);
