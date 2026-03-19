@@ -7,7 +7,9 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 namespace Framework {
-    Model::Model(ShaderProgram* program, const std::string& prefix) : UniformSource(prefix), program(program) {
+    Model::Model(ShaderProgram* program, glm::vec3 position, glm::vec3 scale, const std::string& prefix) : UniformSource(prefix), program(program) {
+        this->position = position;
+        this->scale = scale;
         meshes = std::vector<Mesh*>();
         materials = std::vector<Material*>();
     }

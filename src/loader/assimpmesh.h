@@ -13,7 +13,8 @@ struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 texCoord;
-    //TODO: Tangent, Bitangent if needed
+    glm::vec3 tangent;
+    glm::vec3 bitangent;
     //NOTE: Bones not needed (for now)
 };
 
@@ -21,9 +22,13 @@ class AssimpMesh : public Mesh {
     GLuint vertexBuffer, indexBuffer, inputLayout;
     std::vector<Vertex> vertexData;
     std::vector<unsigned int> indices;
+    Material* boundMaterial;
 public:
-    AssimpMesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) :
+    AssimpMesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, Material* boundMaterial) :
         Mesh(), vertexData(std::move(vertices)), indices(std::move(indices)) {
+        if (!boundMaterial)
+            throw std::invalid_argument("Material bound to a mesh belonging to an Assimp model cannot be null");
+        this->boundMaterial = boundMaterial;
 		AssimpMesh::createMesh();
     }
 
@@ -49,12 +54,20 @@ public:
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
 
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
+
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
+
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     void draw() override {
+        if (boundMaterial)
+            boundMaterial->draw();
         glBindVertexArray(inputLayout);
         glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, 0);
     }

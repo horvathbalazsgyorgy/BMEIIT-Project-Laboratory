@@ -41,27 +41,35 @@ class AssimpModel : public Model {
     std::string directory;
 
     void initAssimpModel(const std::string& path, const std::vector<TextureType>& types);
+    Material* makeMaterial(std::unordered_map<std::string, std::string>& paths);
 public:
     template<typename ...Args>
     requires(
         sizeof...(Args) >= 1 &&
         (std::same_as<Args, TextureType> && ...)
     )
-    AssimpModel(ShaderProgram* program, const std::string& path, Args... args) : Model(program) {
+    AssimpModel(ShaderProgram* program,
+        const std::string& path,
+        const glm::vec3& position,
+        const glm::vec3& scale,
+        Args... args)
+    : Model(program, position, scale) {
         initAssimpModel(path, {args...});
     }
 
     void load(const std::string& filePath);
-    void processNode(aiNode* node, const aiScene* scene);
-    AssimpMesh* processMesh(aiMesh* mesh, const aiScene* scene);
-    void processMaterial(AssimpMaterial* material, aiMaterial* assimpMat, int type, const std::string& nameMapping);
+    void processNode(aiNode* node, const aiScene* scene, const glm::mat4& modelMatrix);
+    AssimpMesh* processMesh(aiMesh* mesh, const aiScene* scene, const glm::mat4& modelMatrix);
+    void processTextureType(
+        aiMaterial* assimpMat,
+        int type,
+        const std::string& nameMapping,
+        std::unordered_map<std::string, std::string>& paths
+    );
 
     void draw() override {
-        if (meshes.size() == materials.size()) {
-            for (size_t i = 0; i < meshes.size(); i++) {
-                materials[i]->draw();
-                meshes[i]->draw();
-            }
+        for (auto mesh : meshes) {
+            mesh->draw();
         }
     }
 };
