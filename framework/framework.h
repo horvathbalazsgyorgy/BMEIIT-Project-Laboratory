@@ -4,6 +4,7 @@
 #include "opengl/application.h"
 #include "core/camera.h"
 #include "core/light.h"
+#include "core/lightarray.h"
 #include "core/material.h"
 #include "core/mesh.h"
 #include "core/model.h"

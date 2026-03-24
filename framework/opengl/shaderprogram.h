@@ -17,6 +17,7 @@ namespace Framework {
         friend class Material;
         friend class Camera;
         friend class Model;
+        friend class Light;
     public:
         ShaderProgram(GLuint vertexShader, GLuint fragmentShader);
         void useShaderProgram();

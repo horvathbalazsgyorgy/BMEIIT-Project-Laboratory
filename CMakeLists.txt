@@ -23,6 +23,7 @@ find_package(OpenGL REQUIRED)
 add_library(framework
         framework/opengl/application.cpp
         framework/core/camera.cpp
+        framework/core/light.cpp
         framework/core/material.cpp
         framework/core/model.cpp
         framework/scene/scene.cpp
