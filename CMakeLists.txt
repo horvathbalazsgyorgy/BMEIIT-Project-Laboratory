@@ -35,11 +35,6 @@ target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(framework PUBLIC cxx_std_20)
 set_target_properties(framework PROPERTIES CXX_EXTENSIONS OFF)
 
-#glsl files
-file(COPY src/glsl DESTINATION ${CMAKE_BINARY_DIR})
-#resource files
-file(COPY src/resources DESTINATION ${CMAKE_BINARY_DIR})
-
 add_executable(ProjectLaboratory src/main.cpp)
 
 target_link_libraries(framework PUBLIC glfw glad OpenGL::GL glm stb_image)
