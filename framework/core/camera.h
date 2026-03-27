@@ -13,65 +13,69 @@ namespace Framework {
     class Uniform;
 
     class Camera : public UniformSource {
-        std::vector<ShaderProgram*> programs;
         glm::vec3 position;
-        float roll = 0.0f, pitch = 0.0f, yaw = -90.0f;
-        float fov = glm::radians(45.0f),
-            aspect = (float)WindowSize::width/(float)WindowSize::height,
-            nearPlane = 0.1f,
-            farPlane = 1000.0f;
-        float speed = 10.0f;
-        float sensitivity = 0.1f;
+        float pitch       =   0.0f,
+              yaw         = -90.0f,
+              speed       =  10.0f,
+              sensitivity =   0.1f;
 
-        glm::mat4 view = glm::mat4(1.0f), projection = glm::mat4(1.0f), viewProjection, rayDir;
+        float fov       = glm::radians(45.0f),
+              aspect    = (float)WindowSize::width/(float)WindowSize::height,
+              nearPlane = 0.1f,
+              farPlane  = 1000.0f;
+
+        glm::mat4 viewProjection = glm::mat4(1.0f),
+                  rayDir         = glm::mat4(1.0f);
+
         glm::vec3 ahead = glm::vec3(0.0f, 0.0f, -1.0f),
-             right = glm::vec3(1.0f, 0.0f, 0.0f),
-             vup = glm::vec3(0.0f, 1.0f, 0.0f);
+                  right = glm::vec3(1.0f, 0.0f, 0.0f),
+                  vup   = glm::vec3(0.0f, 1.0f, 0.0f);
 
-        Uniform* searchUniform(const std::string& name) const;
+        void initDump() override;
     public:
-        Camera(std::vector<ShaderProgram*> programs, glm::vec3 position, const std::string& prefix = "camera")
-            : UniformSource(prefix), programs(std::move(programs)), position(position) {update();
-        }
-        Camera(std::vector<ShaderProgram*> programs, glm::vec3 position, float roll, float pitch, float yaw, const std::string& prefix = "camera")
-            : UniformSource(prefix), programs(std::move(programs)), position(position), roll(roll), pitch(pitch), yaw(yaw) {
+        Camera(const std::vector<ShaderProgram*>& programs,
+            const glm::vec3 position,
+            const std::string& prefix = "camera")
+            : UniformSource(prefix, programs), position(position)
+        {
             update();
+        }
+        Camera(const std::vector<ShaderProgram*>& programs,
+            const glm::vec3 position,
+            const float pitch,
+            const float yaw,
+            const std::string& prefix = "camera")
+            : UniformSource(prefix, programs), position(position), pitch(pitch), yaw(yaw)
+        {
+            update();
+        }
+
+        void setPosition(const glm::vec3 pos) {
+            this->position = pos;
+        }
+        void setRotation(const float p, const float y) {
+            pitch = p;
+            yaw = y;
+        }
+        void setFov(const float f) {
+            fov = f;
+        }
+        void setAspectRatio(const float aspectRatio) {
+            this->aspect = aspectRatio;
+        }
+        void setPlanes(const float n, const float f) {
+            nearPlane = n;
+            farPlane = f;
+        }
+        void setSpeed(const float s) {
+            speed = s;
+        }
+        void setSensitivity(const float sens) {
+            sensitivity = sens;
         }
 
         void update();
         void move(float dt, const std::set<unsigned int> &keysPressed);
-        Uniform* operator[](const std::string& name) const override;
-
-        glm::mat4 getViewProjMatrix() const {
-            return viewProjection;
-        }
-        glm::mat4 getRayDirMatrix() const {
-            return rayDir;
-        }
-        void setPosition(glm::vec3 pos) {
-            this->position = pos;
-        }
-        void setRotation(float r = 0.0f, float p = 0.0f, float y = 0.0f) {
-            roll = r;
-            pitch = p;
-            yaw = y;
-        }
-        void setFov(float f) {
-            fov = f;
-        }
-        void setAspectRatio(float aspectRatio) {
-            this->aspect = aspectRatio;
-        }
-        void setPlanes(float n, float f) {
-            nearPlane = n;
-            farPlane = f;
-        }
-        void setSpeed(float s) {
-            speed = s;
-        }
-        void setSensitivity(float s) {
-            sensitivity = s;
-        }
 
         ~Camera() override = default;
     };

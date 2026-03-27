@@ -13,7 +13,7 @@ namespace Framework {
         std::unordered_map<std::string, std::unique_ptr<Uniform>> uniforms;
     public:
         void gatherUniforms(GLuint program);
-        Uniform* query(const std::string& name);
+        Uniform* query(const std::string& name) const;
     };
 }
 

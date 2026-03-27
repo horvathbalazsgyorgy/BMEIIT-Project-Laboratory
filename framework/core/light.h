@@ -12,22 +12,27 @@ namespace Framework {
 
     //NOTE: Prone to changes
     class Light : public UniformSource {
-        std::vector<ShaderProgram*> programs;
+        void initDump() override {
+            dump.variables["position"]  = &position;
+            dump.variables["emittance"] = &emittance;
+            dump.variables["ambient"]   = &ambient;
+        }
+    protected:
         glm::vec4 position;
-        glm::vec3 density;
-
-        Uniform* searchUniform(const std::string& name) const;
+        glm::vec3 emittance;
+        glm::vec3 ambient;
     public:
-        Light(std::vector<ShaderProgram*>& programs,
-            glm::vec4 position = glm::vec4(0.0f),
-            glm::vec3 density = glm::vec3(0.0f),
-            const std::string& prefix = "light")
-            : UniformSource(prefix), programs(programs), position(position), density(density) { }
+        Light(const std::vector<ShaderProgram*>& programs,
+            const std::string& prefix = "light",
+            const glm::vec4 position  = glm::vec4(0.0f),
+            const glm::vec3 emittance = glm::vec3(1.0f),
+            const glm::vec3 ambient   = glm::vec3(0.0f))
+            : UniformSource(prefix, programs), position(position), emittance(emittance), ambient(ambient) { }
 
         void setPosition(const glm::vec4 pos) { position = pos; }
-        void setDensity(const glm::vec3 dense) { density = dense; }
+        void setEmittance(const glm::vec3 emit) { emittance = emit; }
+        void setAmbient(const glm::vec3 amb) { ambient = amb; }
 
-        Uniform* operator[](const std::string& name) const override;
         ~Light() override = default;
     };
 }

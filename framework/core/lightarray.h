@@ -10,14 +10,14 @@ namespace Framework {
     class LightArray {
         std::vector<Light*> lights;
     public:
-        LightArray(int size, std::vector<ShaderProgram*>& programs) {
+        LightArray(const int size, const std::vector<ShaderProgram*>& programs, const std::string& prefix = "lights") {
             lights.reserve(size);
             for (int i = 0; i < size; ++i) {
-                lights.push_back(new Light(programs));
+                lights.push_back(new Light(programs, prefix));
             }
         }
 
-        Light& operator[](int index) {
+        Light& operator[](const int index) const {
             return *lights[index];
         }
     };

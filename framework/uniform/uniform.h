@@ -33,9 +33,8 @@ namespace Framework {
         GLenum type;
         virtual void process(std::vector<PrimitiveType> primitives) = 0;
     public:
-        Uniform(const std::string& name, GLint location, GLenum type) :
+        Uniform(const std::string& name, const GLint location, const GLenum type) :
             name(name), location(location), type(type) {}
-        virtual bool acceptTextureUnit(const int& unit) = 0;
         virtual void set(MatType matrix) = 0;
         virtual void set(VecType vector) = 0;
         virtual void set(Texture* texture) = 0;
@@ -99,7 +98,7 @@ namespace Framework {
             commit(values);
         }
     public:
-        UniformFloat(std::string& name, GLint location, GLenum type) :
+        UniformFloat(const std::string& name, const GLint location, const GLenum type) :
             Uniform(name, location, type) { }
 
         void set(MatType matrix) override {
@@ -129,10 +128,6 @@ namespace Framework {
         void set(Texture* texture) override {
             throw std::invalid_argument("Incorrect parameter type for uniform"
                                         " \"" + name + "\", it is a non-texture uniform.");
-        }
-
-        bool acceptTextureUnit(const int& unit) override{
-            return false;
         }
     };
 
@@ -167,7 +162,7 @@ namespace Framework {
                                         ", but found primitive type(s).");
         }
     public:
-        UniformMatrixFloat(std::string& name, GLint location, GLenum type) :
+        UniformMatrixFloat(const std::string& name, const GLint location, const GLenum type) :
             Uniform(name, location, type) { }
 
         void set(MatType matrix) override {
@@ -199,10 +194,6 @@ namespace Framework {
             throw std::invalid_argument("Incorrect parameter type for uniform"
                                         " \"" + name + "\", it is a non-texture uniform.");
         }
-
-        bool acceptTextureUnit(const int& unit) override {
-            return false;
-        }
     };
 
 
@@ -215,8 +206,8 @@ namespace Framework {
                                         ", but found primitive type(s).");
         }
     public:
-        UniformSampler(std::string& name, GLint location, GLenum type) :
-            Uniform(name, location, type), textureUnit(0) { }
+        UniformSampler(const std::string& name, const GLint location, const GLenum type, const int textureUnit) :
+            Uniform(name, location, type), textureUnit(textureUnit) { }
 
         void set(MatType matrix) override {
             throw std::invalid_argument("Incorrect parameter type for uniform"
@@ -233,11 +224,6 @@ namespace Framework {
         void set(Texture* texture) override {
             glUniform1iv(location, 1, &textureUnit);
             texture->bindTexture(textureUnit);
-        }
-
-        bool acceptTextureUnit(const int& unit) override {
-            textureUnit = unit;
-            return true;
         }
     };
 }

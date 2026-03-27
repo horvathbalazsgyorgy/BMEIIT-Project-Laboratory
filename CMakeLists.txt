@@ -23,14 +23,13 @@ find_package(OpenGL REQUIRED)
 add_library(framework
         framework/opengl/application.cpp
         framework/core/camera.cpp
-        framework/core/light.cpp
-        framework/core/material.cpp
         framework/core/model.cpp
         framework/scene/scene.cpp
         framework/opengl/loader/shaderloader.cpp
         framework/opengl/shaderprogram.cpp
         framework/opengl/loader/texture.cpp
-        framework/uniform/uniformregistry.cpp)
+        framework/uniform/uniformregistry.cpp
+        framework/uniform/uniformsource.cpp)
 target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(framework PUBLIC cxx_std_20)
 set_target_properties(framework PROPERTIES CXX_EXTENSIONS OFF)

@@ -1,27 +1,24 @@
 #include "camera.h"
 
-#include <stdexcept>
 #include "../utility/mouse.h"
-#include "../opengl/shaderprogram.h"
 #include "glm/gtc/matrix_transform.hpp"
 
 namespace Framework {
-    Uniform* Camera::searchUniform(const std::string& name) const {
-        for (auto* program : programs) {
-			Uniform* uniform = program->queryUniform(name);
-			if (uniform) {
-                return uniform;
-            }
-        }
-        return nullptr;
+    void Camera::initDump() {
+        dump.variables["viewProjMatrix"] = &viewProjection;
+        dump.variables["rayDirMatrix"]   = &rayDir;
+        dump.variables["position"]       = &position;
     }
 
     void Camera::update() {
-        aspect = (float)WindowSize::width/(float)WindowSize::height;
-        view = glm::lookAt(position, position + ahead, vup);
-        projection = glm::perspective(fov, aspect, nearPlane, farPlane);
-        viewProjection = projection * view;
+        if (WindowSize::width == 0 || WindowSize::height == 0) {
+            return;
+        }
 
+        aspect = (float)WindowSize::width/(float)WindowSize::height;
+        glm::mat4 view = glm::lookAt(position, position + ahead, vup);
+        glm::mat4 projection = glm::perspective(fov, aspect, nearPlane, farPlane);
+        viewProjection = projection * view;
         rayDir = inverse(translate(viewProjection, position));
     }
 
@@ -67,12 +64,5 @@ namespace Framework {
         vup = glm::normalize(glm::cross(right, ahead));
 
         update();
-    }
-
-    Uniform* Camera::operator[](const std::string& name) const {
-        std::string glslUniform = glslPrefix + '.' + name;
-        if (auto uniform = searchUniform(glslUniform))
-            return uniform;
-        throw std::runtime_error("Uniform \"" + glslUniform + "\" not found or is not in use.");
     }
 }

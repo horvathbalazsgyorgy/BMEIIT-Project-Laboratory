@@ -9,18 +9,19 @@ namespace Framework {
     class Uniform;
 
     class ShaderProgram {
+        friend class UniformSource;
+
         GLuint shaderProgram;
         UniformRegistry registry;
-        int textureUnit;
+        std::vector<UniformSource*> sources;
 
-        Uniform* queryUniform(const std::string& name);
-        friend class Material;
-        friend class Camera;
-        friend class Model;
-        friend class Light;
+        void notify() const;
+        Uniform* queryUniform(const std::string& name) const;
     public:
         ShaderProgram(GLuint vertexShader, GLuint fragmentShader);
-        void useShaderProgram();
+        void subscribe(UniformSource* source) { sources.push_back(source); }
+        void unsubscribe(UniformSource* source) { std::erase(sources, source); }
+        void useShaderProgram() const;
         ~ShaderProgram();
     };
 }
