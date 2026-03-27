@@ -5,9 +5,9 @@
 
 namespace Framework {
     void Camera::initDump() {
-        dump.variables["viewProjMatrix"] = &viewProjection;
-        dump.variables["rayDirMatrix"]   = &rayDir;
-        dump.variables["position"]       = &position;
+        dump.variables[glslPrefix + ".viewProjMatrix"] = &viewProjection;
+        dump.variables[glslPrefix + ".rayDirMatrix"]   = &rayDir;
+        dump.variables[glslPrefix + ".position"]       = &position;
     }
 
     void Camera::update() {

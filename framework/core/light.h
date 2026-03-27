@@ -13,9 +13,9 @@ namespace Framework {
     //NOTE: Prone to changes
     class Light : public UniformSource {
         void initDump() override {
-            dump.variables["position"]  = &position;
-            dump.variables["emittance"] = &emittance;
-            dump.variables["ambient"]   = &ambient;
+            dump.variables[glslPrefix + ".position"]  = &position;
+            dump.variables[glslPrefix + ".emittance"] = &emittance;
+            dump.variables[glslPrefix + ".ambient"]   = &ambient;
         }
     protected:
         glm::vec4 position;

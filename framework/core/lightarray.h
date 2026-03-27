@@ -1,6 +1,7 @@
 #ifndef PROJECTLABORATORY_LIGHTARRAY_H
 #define PROJECTLABORATORY_LIGHTARRAY_H
 
+#include <string>
 #include <vector>
 #include "light.h"
 
@@ -13,8 +14,15 @@ namespace Framework {
         LightArray(const int size, const std::vector<ShaderProgram*>& programs, const std::string& prefix = "lights") {
             lights.reserve(size);
             for (int i = 0; i < size; ++i) {
-                lights.push_back(new Light(programs, prefix));
+                lights.push_back(new Light(programs, prefix + '[' + std::to_string(i) + ']'));
             }
+        }
+
+        LightArray& operator+=(const std::string& name) {
+            for (auto* light : lights) {
+                *light += name;
+            }
+            return *this;
         }
 
         Light& operator[](const int index) const {

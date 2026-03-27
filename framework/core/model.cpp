@@ -8,8 +8,8 @@
 
 namespace Framework {
     void Model::initDump() {
-        dump.variables["modelMatrix"] = &modelMatrix;
-        dump.variables["position"] = &position;
+        dump.variables[glslPrefix + ".modelMatrix"] = &modelMatrix;
+        dump.variables[glslPrefix + ".position"] = &position;
     }
 
     Model::Model(ShaderProgram* program, glm::vec3 position, glm::vec3 scale, const std::string& prefix)
