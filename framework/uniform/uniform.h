@@ -84,8 +84,8 @@ namespace Framework {
             size_t N = primitives.size();
             if (N != Size)
                 throw std::invalid_argument("Incorrect amount of parameters for uniform"
-                                            " \"" + name + "\", expected " + std::to_string(Size) +
-                                            " but found " + std::to_string(N) + ".");
+                                            " \"" + name + "\"; expected " + std::to_string(Size) +
+                                            ", but found " + std::to_string(N) + ".");
             float values[Size];
             try {
                 for (int i = 0; i < N; i++) {
@@ -93,7 +93,7 @@ namespace Framework {
                 }
             }catch (std::exception &ex) {
                 throw std::invalid_argument("Incorrect parameter type(s) for uniform"
-                                            " \"" + name + "\", expected float(s), but found non-float(s).");
+                                            " \"" + name + "\"; expected float(s), but found non-float(s).");
             }
             commit(values);
         }
@@ -103,31 +103,31 @@ namespace Framework {
 
         void set(MatType matrix) override {
             throw std::runtime_error("Incorrect parameter type for uniform"
-                                     " \"" + name + "\", expected float(s), but found matrix.");
+                                     " \"" + name + "\"; expected float(s), but found matrix.");
         }
 
         void set(VecType vector) override {
             if (const auto v2 = std::get_if<glm::vec2>(&vector)){
                 Size == 2 ? commit(glm::value_ptr(*v2)) :
                 throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\", expected vec" + std::to_string(Size) +
+                                            " \"" + name + "\"; expected vec" + std::to_string(Size) +
                                             ", but found vec2.");
             } else if (const auto v3 = std::get_if<glm::vec3>(&vector)) {
                 Size == 3 ? commit(glm::value_ptr(*v3)) :
                 throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\", expected vec" + std::to_string(Size) +
+                                            " \"" + name + "\"; expected vec" + std::to_string(Size) +
                                             ", but found vec3.");
             } else if (const auto v4 = std::get_if<glm::vec4>(&vector)) {
                 Size == 4 ? commit(glm::value_ptr(*v4)) :
                 throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\", expected vec" + std::to_string(Size) +
+                                            " \"" + name + "\"; expected vec" + std::to_string(Size) +
                                             ", but found vec4.");
             }
         }
 
         void set(Texture* texture) override {
             throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\", it is a non-texture uniform.");
+                                        " \"" + name + "\"; it is a non-texture uniform.");
         }
     };
 
@@ -158,7 +158,7 @@ namespace Framework {
 
         void process(std::vector<PrimitiveType> primitives) override {
             throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\", expected mat" + std::to_string(Size) +
+                                        " \"" + name + "\"; expected mat" + std::to_string(Size) +
                                         ", but found primitive type(s).");
         }
     public:
@@ -169,30 +169,30 @@ namespace Framework {
             if (const auto m2 = std::get_if<glm::mat2>(&matrix)) {
                 type == GL_FLOAT_MAT2 ? commit(glm::value_ptr(*m2)) :
                 throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\", expected mat" + std::to_string(Size) +
+                                            " \"" + name + "\"; expected mat" + std::to_string(Size) +
                                             ", but found mat2.");
             } else if (const auto m3 = std::get_if<glm::mat3>(&matrix)) {
                 type == GL_FLOAT_MAT3 ? commit(glm::value_ptr(*m3)) :
                 throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\", expected mat" + std::to_string(Size) +
+                                            " \"" + name + "\"; expected mat" + std::to_string(Size) +
                                             ", but found mat3.");
             } else if (const auto m4 = std::get_if<glm::mat4>(&matrix)) {
                 type == GL_FLOAT_MAT4 ? commit(glm::value_ptr(*m4)) :
                 throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\", expected mat" + std::to_string(Size) +
+                                            " \"" + name + "\"; expected mat" + std::to_string(Size) +
                                             ", but found mat4.");
             }
         }
 
         void set(VecType vector) override {
             throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\", expected mat" + std::to_string(Size) +
+                                        " \"" + name + "\"; expected mat" + std::to_string(Size) +
                                         ", but found vector.");
         }
 
         void set(Texture* texture) override {
             throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\", it is a non-texture uniform.");
+                                        " \"" + name + "\"; it is a non-texture uniform.");
         }
     };
 
@@ -202,7 +202,7 @@ namespace Framework {
 
         void process(std::vector<PrimitiveType> primitives) override {
             throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\", expected Texture" +
+                                        " \"" + name + "\"; expected Texture" +
                                         ", but found primitive type(s).");
         }
     public:
@@ -211,13 +211,13 @@ namespace Framework {
 
         void set(MatType matrix) override {
             throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\", expected Texture" +
+                                        " \"" + name + "\"; expected Texture" +
                                         ", but found matrix.");
         }
 
         void set(VecType vector) override {
             throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\", expected Texture" +
+                                        " \"" + name + "\"; expected Texture" +
                                         ", but found vector.");
         }
 
