@@ -3,23 +3,24 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 #include "light.h"
 
 namespace Framework {
     class ShaderProgram;
 
     class LightArray {
-        std::vector<Light*> lights;
+        std::vector<std::unique_ptr<Light>> lights;
     public:
         LightArray(const int size, const std::vector<ShaderProgram*>& programs, const std::string& prefix = "lights") {
             lights.reserve(size);
             for (int i = 0; i < size; ++i) {
-                lights.push_back(new Light(programs, prefix + '[' + std::to_string(i) + ']'));
+                lights.push_back(std::make_unique<Light>(programs, prefix + '[' + std::to_string(i) + ']'));
             }
         }
 
         LightArray& operator+=(const std::string& name) {
-            for (auto* light : lights) {
+            for (auto& light : lights) {
                 *light += name;
             }
             return *this;
