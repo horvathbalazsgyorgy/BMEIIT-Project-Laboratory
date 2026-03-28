@@ -31,12 +31,11 @@ namespace Framework {
     //TODO: Ability to modify variable dump
     class UniformSource {
         virtual void initDump() = 0;
-        void initSource(const std::vector<ShaderProgram*>& programs);
     protected:
         Dump dump;
         std::string glslPrefix;
     public:
-        UniformSource(const std::string &prefix, const std::vector<ShaderProgram*>& programs);
+        UniformSource(std::string prefix, const std::vector<ShaderProgram*>& programs);
         virtual void update(const ShaderProgram* program);
         UniformSource& operator+=(const std::string& name);
         Uniform* operator()(const std::string& name, const ShaderProgram* program) const;

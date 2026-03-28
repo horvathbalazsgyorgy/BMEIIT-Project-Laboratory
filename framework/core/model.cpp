@@ -17,6 +17,7 @@ namespace Framework {
     {
         this->position = position;
         this->scale = scale;
+        Model::initDump();
         meshes = std::vector<Mesh*>();
         materials = std::vector<Material*>();
     }

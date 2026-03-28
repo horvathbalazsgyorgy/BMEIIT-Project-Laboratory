@@ -27,7 +27,10 @@ namespace Framework {
             const glm::vec4 position  = glm::vec4(0.0f),
             const glm::vec3 emittance = glm::vec3(1.0f),
             const glm::vec3 ambient   = glm::vec3(0.0f))
-            : UniformSource(prefix, programs), position(position), emittance(emittance), ambient(ambient) { }
+        : UniformSource(prefix, programs), position(position), emittance(emittance), ambient(ambient)
+        {
+            Light::initDump();
+        }
 
         void setPosition(const glm::vec4 pos) { position = pos; }
         void setEmittance(const glm::vec3 emit) { emittance = emit; }

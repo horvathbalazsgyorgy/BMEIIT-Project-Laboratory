@@ -38,6 +38,7 @@ namespace Framework {
             const std::string& prefix = "camera")
             : UniformSource(prefix, programs), position(position)
         {
+            Camera::initDump();
             update();
         }
         Camera(const std::vector<ShaderProgram*>& programs,
@@ -47,6 +48,7 @@ namespace Framework {
             const std::string& prefix = "camera")
             : UniformSource(prefix, programs), position(position), pitch(pitch), yaw(yaw)
         {
+            Camera::initDump();
             update();
         }
 

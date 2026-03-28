@@ -1,22 +1,17 @@
 #include "uniformsource.h"
 
 #include <stdexcept>
+#include <utility>
 #include "../opengl/shaderprogram.h"
 #include "uniform.h"
-#include "uniformregistry.h"
 
 namespace Framework {
-    void UniformSource::initSource(const std::vector<ShaderProgram*>& programs) {
-        initDump();
+    UniformSource::UniformSource(std::string prefix, const std::vector<ShaderProgram*>& programs) : glslPrefix(std::move(prefix)) {
+        if (programs.empty())
+            throw std::invalid_argument("Invalid argument; expected at least one shader program, but none were provided.");
         for (auto program : programs) {
             program->subscribe(this);
         }
-    }
-
-    UniformSource::UniformSource(const std::string &prefix, const std::vector<ShaderProgram*>& programs) : glslPrefix(prefix) {
-        if (programs.empty())
-            throw std::invalid_argument("Invalid argument; expected at least one shader program, but none were provided.");
-        initSource(programs);
     }
 
     void UniformSource::update(const ShaderProgram* program) {
