@@ -15,8 +15,8 @@ namespace Framework {
         void build() {
             reset();
             buildPrograms();
-            buildMeshes();
             buildMaterials();
+            buildMeshes();
             buildModels();
         }
         virtual ~SceneBuilder() = default;
