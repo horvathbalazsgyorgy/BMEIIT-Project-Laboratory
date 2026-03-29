@@ -2,20 +2,40 @@
 #define PROJECTLABORATORY_LIGHT_H
 
 #include <string>
+#include <vector>
 #include "../uniform/uniformsource.h"
 #include "glm/glm.hpp"
 
-//NOTE: Prone to changes
 namespace Framework {
-    class Light : public UniformSource {
-        glm::vec4 position;
-        glm::vec3 density;
-    public:
-        Light(glm::vec4 position, glm::vec3 density, const std::string& prefix = "light")
-            : UniformSource(prefix), position(position), density(density) { }
+    class ShaderProgram;
+    class Uniform;
 
-        //TODO: Implementation (need program for that)
-        Uniform* operator[](const std::string& name) const override;
+    //NOTE: Prone to changes
+    class Light : public UniformSource {
+        void initDump() override {
+            dump.variables[glslPrefix + ".position"]  = &position;
+            dump.variables[glslPrefix + ".emittance"] = &emittance;
+            dump.variables[glslPrefix + ".ambient"]   = &ambient;
+        }
+    protected:
+        glm::vec4 position;
+        glm::vec3 emittance;
+        glm::vec3 ambient;
+    public:
+        Light(const std::vector<ShaderProgram*>& programs,
+            const std::string& prefix = "light",
+            const glm::vec4 position  = glm::vec4(0.0f),
+            const glm::vec3 emittance = glm::vec3(1.0f),
+            const glm::vec3 ambient   = glm::vec3(0.0f))
+        : UniformSource(prefix, programs), position(position), emittance(emittance), ambient(ambient)
+        {
+            Light::initDump();
+        }
+
+        void setPosition(const glm::vec4 pos) { position = pos; }
+        void setEmittance(const glm::vec3 emit) { emittance = emit; }
+        void setAmbient(const glm::vec3 amb) { ambient = amb; }
+
         ~Light() override = default;
     };
 }

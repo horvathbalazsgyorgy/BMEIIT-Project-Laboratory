@@ -5,6 +5,8 @@
 
 namespace {
     struct UniformFactory {
+        static inline int samplerUnit = 0;
+
         static std::unique_ptr<Framework::Uniform> create(std::string& name, GLint location, GLenum type) {
             if (type == GL_FLOAT)
                 return std::make_unique<Framework::UniformFloat<1>>(name, location, type);
@@ -21,14 +23,16 @@ namespace {
             if (type == GL_FLOAT_MAT4)
                 return std::make_unique<Framework::UniformMatrixFloat<4>>(name, location, type);
             if (type == GL_SAMPLER_2D || type == GL_SAMPLER_CUBE)
-                return std::make_unique<Framework::UniformSampler>(name, location, type);
-            throw std::runtime_error("Unsupported uniform type: " + std::to_string(type));
+                return std::make_unique<Framework::UniformSampler>(name, location, type, samplerUnit++);
+            throw std::runtime_error("Unsupported uniform type; expected sampler2D or samplerCube, but found otherwise.");
         }
     };
 }
 
 namespace Framework {
     void UniformRegistry::gatherUniforms(GLuint program) {
+        UniformFactory::samplerUnit = 0;
+
         GLint count = 0;
         glGetProgramInterfaceiv(
             program,
@@ -67,11 +71,10 @@ namespace Framework {
         }
     }
 
-    Uniform* UniformRegistry::query(const std::string& name) {
+    Uniform* UniformRegistry::query(const std::string& name) const {
         auto it = uniforms.find(name);
         if (it != uniforms.end()) {
-            Uniform* uniform = it->second.get();
-            return uniform;
+            return it->second.get();
         }
         return nullptr;
     }

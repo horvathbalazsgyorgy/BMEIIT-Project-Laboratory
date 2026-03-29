@@ -15,9 +15,10 @@ namespace Framework {
         void setBuilder(SceneBuilder* build) {
             this->builder = build;
         }
-        void buildScene() const;
-        void drawScene(float dt, const std::set<unsigned int> &keysPressed) const;
-        void disposeScene() const;
+        virtual void buildScene() const;
+        virtual void drawScene(float dt, const std::set<unsigned int> &keysPressed) const;
+        virtual void disposeScene() const;
+        virtual ~Scene() = default;
     };
 }
 

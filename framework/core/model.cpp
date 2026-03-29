@@ -7,9 +7,17 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 namespace Framework {
-    Model::Model(ShaderProgram* program, glm::vec3 position, glm::vec3 scale, const std::string& prefix) : UniformSource(prefix), program(program) {
+    void Model::initDump() {
+        dump.variables[glslPrefix + ".modelMatrix"] = &modelMatrix;
+        dump.variables[glslPrefix + ".position"] = &position;
+    }
+
+    Model::Model(ShaderProgram* program, glm::vec3 position, glm::vec3 scale, const std::string& prefix)
+    : UniformSource(prefix, {program}), program(program)
+    {
         this->position = position;
         this->scale = scale;
+        Model::initDump();
         meshes = std::vector<Mesh*>();
         materials = std::vector<Material*>();
     }
@@ -19,20 +27,11 @@ namespace Framework {
         modelMatrix = glm::scale(modelMatrix, scale);
         modelMatrix = glm::translate(modelMatrix, position);
     }
-
+    
     void Model::draw() {
-        for (auto material : materials) {
-            material->draw();
-        }
+        program->useShaderProgram(this);
         for (auto mesh : meshes) {
             mesh->draw();
         }
-    }
-
-    Uniform* Model::operator[](const std::string& name) const {
-        std::string glslUniform = glslPrefix + '.' + name;
-        if (auto uniform = program->queryUniform(glslUniform))
-            return uniform;
-        throw std::runtime_error("Uniform \"" + glslUniform + "\" not found or is not in use.");
     }
 }

@@ -1,14 +1,18 @@
 #include "shaderprogram.h"
 
-#include "../uniform/uniform.h"
 #include <stdexcept>
+#include "../uniform/uniform.h"
+#include "framework/uniform/uniformsource.h"
 
 namespace Framework {
-    Uniform* ShaderProgram::queryUniform(const std::string& name) {
-        Uniform* uniform = registry.query(name);
-        if (uniform) {
-            if (uniform->acceptTextureUnit(textureUnit))
-                textureUnit++;
+    void ShaderProgram::notify() const {
+        for (auto* source : sources) {
+            source->update(this);
+        }
+    }
+
+    Uniform* ShaderProgram::queryUniform(const std::string& name) const {
+        if (auto* uniform = registry.query(name)) {
             return uniform;
         }
         return nullptr;
@@ -31,12 +35,19 @@ namespace Framework {
         }
 
         registry.gatherUniforms(shaderProgram);
-        textureUnit = 0;
     }
 
-    void ShaderProgram::useShaderProgram() {
-        textureUnit = 0;
-        glUseProgram(shaderProgram);
+    void ShaderProgram::useShaderProgram(UniformSource* source) const {
+        if (activeProgram != shaderProgram) {
+            glUseProgram(shaderProgram);
+            activeProgram = shaderProgram;
+            if (!source)
+                return;
+            notify();
+        }else {
+            if (source)
+                source->update(this);
+        }
     }
 
     ShaderProgram::~ShaderProgram() {

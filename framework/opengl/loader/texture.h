@@ -19,6 +19,7 @@ namespace Framework {
 
     class Texture2D : public Texture {
     public:
+        Texture2D() = default;
         Texture2D(const std::string &filePath);
         void bindTexture(int samplerIndex) const override;
     };
@@ -26,6 +27,7 @@ namespace Framework {
 
     class TextureCube : public Texture {
     public:
+        TextureCube() = default;
         TextureCube(const std::string (&faces)[6]);
         void bindTexture(int samplerIndex) const override;
     };

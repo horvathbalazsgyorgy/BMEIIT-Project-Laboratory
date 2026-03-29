@@ -1,24 +1,24 @@
 #ifndef PROJECTLABORATORY_MESH_H
 #define PROJECTLABORATORY_MESH_H
 
+#include <stdexcept>
+#include "material.h"
+
 namespace Framework {
     class Mesh {
+        Material* boundMaterial;
     public:
-        Mesh() = default;
-        virtual void createMesh() = 0;
-        virtual void draw() = 0;
-        virtual ~Mesh() = default;
-    };
+        Mesh(Material* boundMaterial) {
+            if (!boundMaterial)
+                throw std::invalid_argument("Invalid argument; expected material but found none.");
+            this->boundMaterial = boundMaterial;
+        }
 
-    //NOTE: For test purposes
-    class EmptyMesh : public Mesh {
-    public:
-        void createMesh() override {
-            /*nop*/
+        virtual void createMesh() = 0;
+        virtual void draw() {
+            boundMaterial->draw();
         }
-        void draw() override {
-            /*nop*/
-        }
+        virtual ~Mesh() = default;
     };
 }
 
