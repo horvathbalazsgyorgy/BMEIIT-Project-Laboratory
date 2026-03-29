@@ -37,11 +37,15 @@ void Builder3D::buildMaterials() {
 
 void Builder3D::buildModels() {
     camera = new Camera({colorProgram, envMappedProgram}, glm::vec3(0.0f, 0.0f, 10.0f));
+    *camera += "viewProjMatrix";
+    *camera += "rayDirMatrix";
+
     models.push_back(new AssimpModel(colorProgram,
         "resources/assimp/revolver/scene.gltf",
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(1.0f, 1.0f, 1.0f),
         DIFFUSE));
+    *models[0] += "modelMatrix";
 }
 
 void Builder3D::draw(float dt, std::set<unsigned int> keysPressed) {
@@ -54,7 +58,6 @@ void Builder3D::draw(float dt, std::set<unsigned int> keysPressed) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    colorProgram->useShaderProgram();
     camera->move(dt, keysPressed);
 
     for (auto model : models) {
