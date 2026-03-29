@@ -15,12 +15,25 @@ namespace Framework {
     }
 
     void UniformSource::update(const ShaderProgram* program) {
+        if (dump.variables.empty() || dump.uniforms.empty())
+            return;
+
         for (const auto& key : dump.uniforms) {
             if (auto uniform = program->queryUniform(key)) {
-                auto var = dump.variables[key];
-                std::visit([uniform](auto&& value) {
-                    uniform->set(*value);
-                }, var);
+                auto it = dump.variables.find(key);
+                if (it == dump.variables.end())
+                    throw std::runtime_error("Invalid dump entry; valid uniform "
+                                             "\"" + key + "\" not found in dump for auto binding.");
+
+                std::visit([uniform](auto&& value)
+                {
+                    using T = std::decay_t<decltype(value)>;
+                    if constexpr (std::is_same_v<T, Texture*>) {
+                        uniform->set(value);
+                    }else {
+                        uniform->set(*value);
+                    }
+                }, it->second);
             }
         }
     }
@@ -32,6 +45,7 @@ namespace Framework {
 
     Uniform* UniformSource::operator()(const std::string& name, const ShaderProgram* program) const {
         const std::string glslUniform = glslPrefix + '.' + name;
+        program->useShaderProgram();
         if (auto uniform = program->queryUniform(glslUniform))
             return uniform;
         throw std::runtime_error("Uniform \"" + glslUniform + "\" not found or is not in use.");

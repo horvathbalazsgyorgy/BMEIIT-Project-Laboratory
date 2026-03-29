@@ -16,7 +16,7 @@ namespace Framework {
     struct Dump {
     private:
         using DumpVar = std::variant<
-            Texture**,
+            Texture*,
             glm::vec2*, glm::mat2*,
             glm::vec3*, glm::mat3*,
             glm::vec4*, glm::mat4*,
