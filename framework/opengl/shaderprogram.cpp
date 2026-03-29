@@ -37,9 +37,17 @@ namespace Framework {
         registry.gatherUniforms(shaderProgram);
     }
 
-    void ShaderProgram::useShaderProgram() const {
-        glUseProgram(shaderProgram);
-        notify();
+    void ShaderProgram::useShaderProgram(UniformSource* source) const {
+        if (activeProgram != shaderProgram) {
+            glUseProgram(shaderProgram);
+            activeProgram = shaderProgram;
+            if (!source)
+                return;
+            notify();
+        }else {
+            if (source)
+                source->update(this);
+        }
     }
 
     ShaderProgram::~ShaderProgram() {

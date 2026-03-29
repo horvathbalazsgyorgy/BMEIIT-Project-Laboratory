@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include "material.h"
 #include "mesh.h"
-#include "framework/opengl/shaderprogram.h"
+#include "../opengl/shaderprogram.h"
 #include "glm/gtc/matrix_transform.hpp"
 
 namespace Framework {
@@ -29,7 +29,7 @@ namespace Framework {
     }
     
     void Model::draw() {
-        program->useShaderProgram();
+        program->useShaderProgram(this);
         for (auto mesh : meshes) {
             mesh->draw();
         }

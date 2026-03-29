@@ -12,6 +12,7 @@ namespace Framework {
         friend class UniformSource;
 
         GLuint shaderProgram;
+        static inline GLuint activeProgram = 0;
         UniformRegistry registry;
         std::vector<UniformSource*> sources;
 
@@ -21,7 +22,7 @@ namespace Framework {
         ShaderProgram(GLuint vertexShader, GLuint fragmentShader);
         void subscribe(UniformSource* source) { sources.push_back(source); }
         void unsubscribe(UniformSource* source) { std::erase(sources, source); }
-        void useShaderProgram() const;
+        void useShaderProgram(UniformSource* source = nullptr) const;
         ~ShaderProgram();
     };
 }

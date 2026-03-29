@@ -3,6 +3,7 @@
 
 #include <string>
 #include "../uniform/uniformsource.h"
+#include "../opengl/shaderprogram.h"
 
 namespace Framework {
     class Uniform;
@@ -16,7 +17,7 @@ namespace Framework {
             : UniformSource(prefix, {program}), program(program) { }
 
         virtual void draw() {
-            update(program);
+            program->useShaderProgram(this);
         }
 
         ~Material() override = default;
