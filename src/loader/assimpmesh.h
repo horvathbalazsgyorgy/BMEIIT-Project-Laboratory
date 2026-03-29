@@ -24,13 +24,8 @@ class AssimpMesh : public Mesh {
     std::vector<unsigned int> indices;
     Material* boundMaterial;
 public:
-    AssimpMesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, Material* boundMaterial) :
-        Mesh(), vertexData(std::move(vertices)), indices(std::move(indices)) {
-        if (!boundMaterial)
-            throw std::invalid_argument("Material bound to a mesh belonging to an Assimp model cannot be null");
-        this->boundMaterial = boundMaterial;
-		AssimpMesh::createMesh();
-    }
+    AssimpMesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, Material* boundMaterial)
+        : Mesh(boundMaterial), vertexData(std::move(vertices)), indices(std::move(indices)) { }
 
     void createMesh() override {
         glGenVertexArrays(1, &inputLayout);
@@ -66,8 +61,7 @@ public:
     }
 
     void draw() override {
-        if (boundMaterial)
-            boundMaterial->draw();
+        Mesh::draw();
         glBindVertexArray(inputLayout);
         glDrawElements(GL_TRIANGLES, (unsigned int)indices.size(), GL_UNSIGNED_INT, 0);
     }

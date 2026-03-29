@@ -66,12 +66,6 @@ public:
         const std::string& nameMapping,
         std::unordered_map<std::string, std::string>& paths
     );
-
-    void draw() override {
-        for (auto mesh : meshes) {
-            mesh->draw();
-        }
-    }
 };
 
 #endif //PROJECTLABORATORY_ASSIMPMODEL_H

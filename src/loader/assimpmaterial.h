@@ -8,14 +8,13 @@ using namespace Framework;
 
 class AssimpMaterial : public Material {
     std::unordered_map<std::string, std::string> paths;
-    std::unordered_map<std::string, Texture*> textures;
 public:
-    AssimpMaterial(ShaderProgram* program) :
-        Material(program) {}
+    AssimpMaterial(ShaderProgram* program) : Material(program) {}
 
     void addTexture(const std::string& name, const std::string& path, Texture* texture) {
         paths[name] = path;
-        textures[name] = texture;
+        dump.variables[glslPrefix + '.' + name] = texture;
+        *this += name;
     }
 
     bool compare(std::unordered_map<std::string, std::string>& currentPaths) {
@@ -34,13 +33,6 @@ public:
         }
 
         return true;
-    }
-
-    void draw() override {
-        Material::draw();
-        for (const auto& [key, value]: textures) {
-            (*this)[key]->set(value);
-        }
     }
 };
 
