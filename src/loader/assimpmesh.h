@@ -25,7 +25,10 @@ class AssimpMesh : public Mesh {
     Material* boundMaterial;
 public:
     AssimpMesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, Material* boundMaterial)
-        : Mesh(boundMaterial), vertexData(std::move(vertices)), indices(std::move(indices)) { }
+        : Mesh(boundMaterial), vertexData(std::move(vertices)), indices(std::move(indices))
+    {
+        AssimpMesh::createMesh();
+    }
 
     void createMesh() override {
         glGenVertexArrays(1, &inputLayout);
