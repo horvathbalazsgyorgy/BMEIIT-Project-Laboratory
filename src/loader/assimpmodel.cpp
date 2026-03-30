@@ -132,13 +132,13 @@ AssimpMesh* AssimpModel::processMesh(aiMesh* mesh, const aiScene* scene, const g
             tangent.x = mesh->mTangents[i].x;
             tangent.y = mesh->mTangents[i].y;
             tangent.z = mesh->mTangents[i].z;
-            vertex.tangent = glm::normalize(glm::mat3(modelMatrix) * tangent);
+            vertex.tangent = glm::normalize(normalMatrix * tangent);
 
             glm::vec3 bitangent;
             bitangent.x = mesh->mBitangents[i].x;
             bitangent.y = mesh->mBitangents[i].y;
             bitangent.z = mesh->mBitangents[i].z;
-            vertex.bitangent = glm::normalize(glm::mat3(modelMatrix) * bitangent);
+            vertex.bitangent = glm::normalize(normalMatrix * bitangent);
         }
 
         vertices.push_back(vertex);
