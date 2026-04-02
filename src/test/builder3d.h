@@ -2,7 +2,7 @@
 #define PROJECTLABORATORY_BUILDER3D_H
 
 #include <vector>
-#include "../../framework/scene/scenebuilder.h"
+#include "framework/framework.h"
 
 namespace Framework {
     class ShaderProgram;
@@ -21,6 +21,7 @@ class Builder3D : public SceneBuilder {
     Texture *envTexture;
     Material *envMappedMaterial;
     Camera *camera;
+    LightArray *lights;
 
     std::vector<Model*> models;
 
@@ -29,7 +30,7 @@ class Builder3D : public SceneBuilder {
     void buildMaterials() override;
     void buildModels() override;
 public:
-    Builder3D() : SceneBuilder() {}
+    Builder3D() : SceneBuilder() { }
 
     void reset() override {
         models.clear();

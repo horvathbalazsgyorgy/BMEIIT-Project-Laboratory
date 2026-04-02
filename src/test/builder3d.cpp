@@ -2,17 +2,12 @@
 #include "quadmesh.h"
 #include "src/loader/assimpmodel.h"
 
-#include "framework/opengl/shaderprogram.h"
-#include "framework/opengl/loader/shaderloader.h"
-#include "../../framework/uniform/uniform.h"
-#include "framework/core/camera.h"
-
 void Builder3D::buildPrograms() {
     auto vsEnvmapped = ShaderLoader::createAndCompileShader(GL_VERTEX_SHADER, "envmapped-vs.glsl");
     auto fsEnvmapped = ShaderLoader::createAndCompileShader(GL_FRAGMENT_SHADER, "envmapped-fs.glsl");
 
     auto vsTrafo = ShaderLoader::createAndCompileShader(GL_VERTEX_SHADER, "trafo-vs.glsl");
-    auto fsDiffuse = ShaderLoader::createAndCompileShader(GL_FRAGMENT_SHADER, "diffuse/diffuse-fs.glsl");
+    auto fsDiffuse = ShaderLoader::createAndCompileShader(GL_FRAGMENT_SHADER, "maxblinn-fs.glsl");
 
     envMappedProgram = new ShaderProgram(vsEnvmapped, fsEnvmapped);
     colorProgram = new ShaderProgram(vsTrafo, fsDiffuse);
@@ -37,15 +32,35 @@ void Builder3D::buildMaterials() {
 
 void Builder3D::buildModels() {
     camera = new Camera({colorProgram, envMappedProgram}, glm::vec3(0.0f, 0.0f, 10.0f));
+    camera->setSpeed(5.0f);
     *camera += "viewProjMatrix";
     *camera += "rayDirMatrix";
+    *camera += "position";
+
+    lights = new LightArray(3, {colorProgram});
+    (*lights)[0].setPosition(glm::vec4(5.0f, 3.0f, -10.0f, 1.0f));
+    (*lights)[0].setEmittance(glm::vec3(1.0f, 0.95f, 0.6f));
+    (*lights)[0].setAmbient(glm::vec3(0.2f, 0.2f, 0.2f));
+
+    (*lights)[1].setPosition(glm::vec4(-5.0f, 3.0f, 5.0f, 1.0f));
+    (*lights)[1].setEmittance(glm::vec3(1.0f, 0.95f, 0.6f));
+    (*lights)[1].setAmbient(glm::vec3(0.2f, 0.2f, 0.2f));
+
+    (*lights)[2].setPosition(glm::vec4(-1.0f, 3.0f, 1.0f, 1.0f));
+    (*lights)[2].setEmittance(glm::vec3(1.0f, 0.95f, 0.6f));
+    (*lights)[2].setAmbient(glm::vec3(0.2f, 0.2f, 0.2f));
+
+    *lights += "position";
+    *lights += "emittance";
+    *lights += "ambient";
 
     models.push_back(new AssimpModel(colorProgram,
-        "resources/assimp/revolver/scene.gltf",
+        "resources/assimp/guitar_backpack/scene.gltf",
         glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f),
-        DIFFUSE));
+        glm::vec3(0.01f, 0.01f, 0.01f),
+        DIFFUSE, NORMAL));
     *models[0] += "modelMatrix";
+    *models[0] += "normalMatrix";
 }
 
 void Builder3D::draw(float dt, std::set<unsigned int> keysPressed) {

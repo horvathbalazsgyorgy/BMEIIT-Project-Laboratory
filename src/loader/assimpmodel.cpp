@@ -1,5 +1,6 @@
 #include "assimpmodel.h"
 
+#include <iostream>
 #include "assimpmesh.h"
 #include "assimpmaterial.h"
 #include "assimp/Importer.hpp"
@@ -51,6 +52,9 @@ void AssimpModel::initAssimpModel(const std::string& path, const std::vector<Tex
     textureTypes = std::vector(types);
     uniformNameMapping.init();
     load(path);
+
+    //Only logging/testing purposes
+    std::cout << "Meshes: " << meshes.size() << "\nMaterials: " << materials.size() << std::endl;
 }
 
 Material *AssimpModel::makeMaterial(std::unordered_map<std::string, std::string> &paths) {
