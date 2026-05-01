@@ -158,7 +158,6 @@ void main(void) {
     //IBL environment lighting
     vec3 ambient = shadeIBL(normal, viewDir, albedo, roughness, metallic, ao);
     vec3 color = L0 + ambient;
-    vec3 toneMapped = vec3(1.0f) - exp(-color * exposure);
 
-    fragmentColor = vec4(toneMapped, 1.0f);
+    fragmentColor = vec4(color, 1.0f);
 }
