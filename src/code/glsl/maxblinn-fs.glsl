@@ -7,11 +7,15 @@ in vec4 worldNormal;
 in vec4 worldTangent;
 in vec4 worldBitangent;
 in vec3 viewDir;
-in vec2 tex;
+in vec4 color;
+in vec2 tex[4];
 
 uniform struct{
-    sampler2D diffuseMap1;
+    sampler2D albedoMap1;
     sampler2D normalMap1;
+
+    int albedoMap1_uv;
+    int normalMap1_uv;
 } material;
 
 uniform struct{
@@ -23,7 +27,11 @@ uniform struct{
 out vec4 fragmentColor;
 
 vec4 shade(vec3 normal, vec3 lightDir, vec3 emittance, vec3 ambient, float distance){
-    vec3 kd = texture(material.diffuseMap1, tex).rgb;
+    vec4 kda = texture(material.albedoMap1, tex[material.albedoMap1_uv]);
+    if(kda.a < 0.1){
+        discard;
+    }
+    vec3 kd = kda.rgb * color.rgb;
     vec3 ks = vec3(1.0f, 1.0f, 1.0f);
 
     vec3 ambientColor = ambient * kd;
@@ -36,8 +44,8 @@ vec4 shade(vec3 normal, vec3 lightDir, vec3 emittance, vec3 ambient, float dista
     float cost   = pow(max(dot(normal, halfway), 0.0f), 64.0f);
     vec3 specularColor = emittance * ks * cost * (cosa / max(cosb, cosa));
 
-    float attenuation = 1.0f / (1.0f + 0.07 * distance + 0.017 * (distance * distance));
-    ambientColor  *= attenuation;
+    //float attenuation = 1.0f / (1.0f + 0.07 * distance + 0.017 * (distance * distance));
+    float attenuation = 1.0f / (distance * distance);
     diffuseColor  *= attenuation;
     specularColor *= attenuation;
 
@@ -47,22 +55,23 @@ vec4 shade(vec3 normal, vec3 lightDir, vec3 emittance, vec3 ambient, float dista
 void main(void) {
     fragmentColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-    vec3 N = normalize(worldNormal.xyz);
+    vec3 N = gl_FrontFacing ? normalize(worldNormal.xyz) : -normalize(worldNormal.xyz);
     vec3 T = normalize(worldTangent.xyz);
     vec3 B = normalize(worldBitangent.xyz);
 
     mat3 TBN = mat3(T, B, N);
 
-    vec3 tangentNormal = texture(material.normalMap1, tex).rgb;
+    vec3 tangentNormal = texture(material.normalMap1, tex[material.normalMap1_uv]).rgb;
     tangentNormal = normalize(tangentNormal * 2.0 - 1.0);
 
     vec3 normal = normalize(TBN * tangentNormal);
 
-    for(int i = 0; i < lights.length(); i++){
+    for (int i = 0; i < 3; i++){
         vec3 lightDiff = lights[i].position.xyz - lights[i].position.w * worldPosition.xyz;
         vec3 lightDir  = normalize(lightDiff);
-        float distance = length(lightDiff) * lights[i].position.w;
+        float distance = length(lightDiff);
 
         fragmentColor += shade(normal, lightDir, lights[i].emittance, lights[i].ambient, distance);
     }
+    fragmentColor = clamp(fragmentColor, 0.0, 1.0);
 }
