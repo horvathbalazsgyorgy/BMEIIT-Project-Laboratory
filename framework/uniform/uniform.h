@@ -1,11 +1,11 @@
 #ifndef PROJECTLABORATORY_UNIFORM_H
 #define PROJECTLABORATORY_UNIFORM_H
 
-#include <variant>
 #include <string>
 #include <vector>
-#include <stdexcept>
+#include <variant>
 #include <concepts>
+#include <stdexcept>
 
 #include "../opengl/loader/texture.h"
 #include "glad/glad.h"
@@ -13,7 +13,7 @@
 #include "glm/gtc/type_ptr.hpp"
 
 namespace Framework {
-    using VecType = std::variant<glm::vec2, glm::vec3, glm::vec4>;
+    using VecType = std::variant<glm::vec2, glm::vec3, glm::vec4, glm::ivec2, glm::ivec3, glm::ivec4>;
     using PrimitiveType = std::variant<int, float, double, bool>;
     using MatType = std::variant<glm::mat2, glm::mat3, glm::mat4>;
 
@@ -122,6 +122,93 @@ namespace Framework {
                 throw std::invalid_argument("Incorrect parameter type for uniform"
                                             " \"" + name + "\"; expected vec" + std::to_string(Size) +
                                             ", but found vec4.");
+            } else {
+                throw std::invalid_argument("Incorrect parameter type for uniform"
+                                            " \"" + name + "\"; expected a vector of floats"
+                                            ", but found otherwise.");
+            }
+        }
+
+        void set(Texture* texture) override {
+            throw std::invalid_argument("Incorrect parameter type for uniform"
+                                        " \"" + name + "\"; it is a non-texture uniform.");
+        }
+    };
+
+
+    template<int Size>
+    requires(
+        Size == 1 ||
+        Size == 2 ||
+        Size == 3 ||
+        Size == 4
+    )
+    class UniformInt : public Uniform {
+        void commit(const int* pValues) {
+            switch (type) {
+                case GL_INT:
+                    glUniform1iv(location, 1, pValues);
+                    break;
+                case GL_INT_VEC2:
+                    glUniform2iv(location, 1, pValues);
+                    break;
+                case GL_INT_VEC3:
+                    glUniform3iv(location, 1, pValues);
+                    break;
+                case GL_INT_VEC4:
+                    glUniform4iv(location, 1, pValues);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        void process(std::vector<PrimitiveType> primitives) override {
+            size_t N = primitives.size();
+            if (N != Size)
+                throw std::invalid_argument("Incorrect amount of parameters for uniform"
+                                            " \"" + name + "\"; expected " + std::to_string(Size) +
+                                            ", but found " + std::to_string(N) + ".");
+            int values[Size];
+            try {
+                for (int i = 0; i < N; i++) {
+                    values[i] = std::get<int>(primitives[i]);
+                }
+            }catch (std::exception &ex) {
+                throw std::invalid_argument("Incorrect parameter type(s) for uniform"
+                                            " \"" + name + "\"; expected int(s), but found non-int(s).");
+            }
+            commit(values);
+        }
+    public:
+        UniformInt(const std::string& name, const GLint location, const GLenum type) :
+            Uniform(name, location, type) { }
+
+        void set(MatType matrix) override {
+            throw std::runtime_error("Incorrect parameter type for uniform"
+                                     " \"" + name + "\"; expected int(s), but found matrix.");
+        }
+
+        void set(VecType vector) override {
+            if (const auto v2 = std::get_if<glm::ivec2>(&vector)){
+                Size == 2 ? commit(glm::value_ptr(*v2)) :
+                throw std::invalid_argument("Incorrect parameter type for uniform"
+                                            " \"" + name + "\"; expected ivec" + std::to_string(Size) +
+                                            ", but found ivec2.");
+            } else if (const auto v3 = std::get_if<glm::ivec3>(&vector)) {
+                Size == 3 ? commit(glm::value_ptr(*v3)) :
+                throw std::invalid_argument("Incorrect parameter type for uniform"
+                                            " \"" + name + "\"; expected ivec" + std::to_string(Size) +
+                                            ", but found ivec3.");
+            } else if (const auto v4 = std::get_if<glm::ivec4>(&vector)) {
+                Size == 4 ? commit(glm::value_ptr(*v4)) :
+                throw std::invalid_argument("Incorrect parameter type for uniform"
+                                            " \"" + name + "\"; expected ivec" + std::to_string(Size) +
+                                            ", but found ivec4.");
+            } else {
+                throw std::invalid_argument("Incorrect parameter type for uniform"
+                                            " \"" + name + "\"; expected a vector of ints"
+                                            ", but found otherwise.");
             }
         }
 
