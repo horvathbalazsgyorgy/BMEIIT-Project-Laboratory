@@ -1,5 +1,6 @@
 #include "application.h"
 
+#include <iostream>
 #include <set>
 #include <stdexcept>
 #include "../scene/scene.h"
@@ -69,12 +70,22 @@ namespace Framework {
     }
 
     void GLApplication::render(Scene* scene) {
-        float timeAtThisFrame = 0.0f;
-        float timeAtLastFrame = 0.0f;
+        float timeAtThisFrame  = 0.0f;
+        float timeAtLastFrame  = 0.0f;
+        float timeAtLastSecond = 0.0f;
+        int framerate = 0;
         while (!glfwWindowShouldClose(window)) {
             timeAtThisFrame = (float)glfwGetTime();
             float dt = timeAtThisFrame - timeAtLastFrame;
             timeAtLastFrame = timeAtThisFrame;
+            timeAtLastSecond += dt;
+            framerate++;
+
+            if (timeAtLastSecond >= 1.0f) {
+                std::cout << "FPS: " << framerate << std::endl;
+                timeAtLastSecond = 0.0f;
+                framerate = 0;
+            }
 
             scene->drawScene(dt, CallbackManager::keysPressed);
 

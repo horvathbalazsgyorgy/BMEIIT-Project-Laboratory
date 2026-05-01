@@ -14,7 +14,7 @@ namespace Framework {
 
     class GLApplication {
         static inline GLFWwindow* window;
-        GLApplication() { }
+        GLApplication() = default;
     public:
         static void initializeGL(int majorVersion, int minorVersion);
         static void createWindow(int width, int height);
