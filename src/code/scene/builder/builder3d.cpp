@@ -113,7 +113,7 @@ void Builder3D::buildMaterials() {
     "resources/background/ldr/nowhere/posz.jpg",
     "resources/background/ldr/nowhere/negz.jpg"});
 
-    hdrTexture = new HDRTexture("resources/background/hdr/qwantani_dusk_2_4k.hdr");
+    hdrTexture = new HDRTexture("resources/background/hdr/studio/wooden_studio_11_4k.hdr");
     backgroundMaterial = new Material((*defaultBatch)["background"]);
     postProcMaterial = new Material((*postProcBatch)["postproc"]);
 }
@@ -192,7 +192,7 @@ void Builder3D::buildUniforms() {
     miscellaneous.linkPrograms((*defaultBatch)["background"]);
     miscellaneous.linkUniform("exposure", &exposure);
 
-    backgroundMaterial->linkUniform("envTexture", (*framebufferCube)[0]);
+    backgroundMaterial->linkUniform("envTexture", (*convolutedFBOCube)[0]);
     postProcMaterial->linkUniform("rawTexture", [this] { return (*postProcFramebuffer)[0]; });
 }
 
