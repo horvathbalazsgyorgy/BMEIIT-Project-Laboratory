@@ -8,6 +8,14 @@ namespace {
         static inline int samplerUnit = 0;
 
         static std::unique_ptr<Framework::Uniform> create(std::string& name, GLint location, GLenum type) {
+            if (type == GL_INT)
+                return std::make_unique<Framework::UniformInt<1>>(name, location, type);
+            if (type == GL_INT_VEC2)
+                return std::make_unique<Framework::UniformInt<2>>(name, location, type);
+            if (type == GL_INT_VEC3)
+                return std::make_unique<Framework::UniformInt<3>>(name, location, type);
+            if (type == GL_INT_VEC4)
+                return std::make_unique<Framework::UniformInt<4>>(name, location, type);
             if (type == GL_FLOAT)
                 return std::make_unique<Framework::UniformFloat<1>>(name, location, type);
             if (type == GL_FLOAT_VEC2)
@@ -22,9 +30,9 @@ namespace {
                 return std::make_unique<Framework::UniformMatrixFloat<3>>(name, location, type);
             if (type == GL_FLOAT_MAT4)
                 return std::make_unique<Framework::UniformMatrixFloat<4>>(name, location, type);
-            if (type == GL_SAMPLER_2D || type == GL_SAMPLER_CUBE)
+            if (type == GL_SAMPLER_2D || type == GL_SAMPLER_CUBE || type == GL_SAMPLER_BUFFER)
                 return std::make_unique<Framework::UniformSampler>(name, location, type, samplerUnit++);
-            throw std::runtime_error("Unsupported uniform type; expected sampler2D or samplerCube, but found otherwise.");
+            throw std::runtime_error("Fatal error; unsupported uniform type.");
         }
     };
 }

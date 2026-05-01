@@ -1,28 +1,26 @@
 #ifndef PROJECTLABORATORY_SHADER_H
 #define PROJECTLABORATORY_SHADER_H
 
-#include <string>
 #include "../uniform/uniformregistry.h"
 #include "glad/glad.h"
 
 namespace Framework {
     class Uniform;
+    class UniformSource;
 
     class ShaderProgram {
-        friend class UniformSource;
-
         GLuint shaderProgram;
-        static inline GLuint activeProgram = 0;
         UniformRegistry registry;
         std::vector<UniformSource*> sources;
-
-        void notify() const;
-        Uniform* queryUniform(const std::string& name) const;
     public:
         ShaderProgram(GLuint vertexShader, GLuint fragmentShader);
+        [[nodiscard]] GLuint ID() const { return shaderProgram; }
+        [[nodiscard]] UniformRegistry& Registry() { return registry; }
+
+        void notify() const;
         void subscribe(UniformSource* source) { sources.push_back(source); }
         void unsubscribe(UniformSource* source) { std::erase(sources, source); }
-        void useShaderProgram(UniformSource* source = nullptr) const;
+        void useShaderProgram() const;
         ~ShaderProgram();
     };
 }

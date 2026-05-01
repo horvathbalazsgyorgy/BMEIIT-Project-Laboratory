@@ -2,20 +2,14 @@
 
 #include <stdexcept>
 #include "../uniform/uniform.h"
-#include "framework/uniform/uniformsource.h"
+#include "../uniform/uniformsource.h"
 
 namespace Framework {
     void ShaderProgram::notify() const {
+        this->useShaderProgram();
         for (auto* source : sources) {
-            source->update(this);
+            source->draw(this);
         }
-    }
-
-    Uniform* ShaderProgram::queryUniform(const std::string& name) const {
-        if (auto* uniform = registry.query(name)) {
-            return uniform;
-        }
-        return nullptr;
     }
 
     ShaderProgram::ShaderProgram(GLuint vertexShader, GLuint fragmentShader) {
@@ -37,17 +31,8 @@ namespace Framework {
         registry.gatherUniforms(shaderProgram);
     }
 
-    void ShaderProgram::useShaderProgram(UniformSource* source) const {
-        if (activeProgram != shaderProgram) {
-            glUseProgram(shaderProgram);
-            activeProgram = shaderProgram;
-            if (!source)
-                return;
-            notify();
-        }else {
-            if (source)
-                source->update(this);
-        }
+    void ShaderProgram::useShaderProgram() const {
+        glUseProgram(shaderProgram);
     }
 
     ShaderProgram::~ShaderProgram() {

@@ -3,22 +3,16 @@
 
 #include <string>
 #include "../uniform/uniformsource.h"
-#include "../opengl/shaderprogram.h"
 
 namespace Framework {
     class Uniform;
 
     class Material : public UniformSource {
-        ShaderProgram* program;
-
+    protected:
         void initDump() override { }
     public:
         Material(ShaderProgram* program, const std::string& prefix = "material")
-            : UniformSource(prefix, {program}), program(program) { }
-
-        virtual void draw() {
-            program->useShaderProgram(this);
-        }
+            : UniformSource(prefix + '.', {program}) { }
 
         ~Material() override = default;
     };

@@ -8,7 +8,8 @@ namespace Framework {
         int height;
     public:
         RenderTarget(const int width, const int height) : width(width), height(height) {}
-        virtual void bindBuffer() = 0;
+        virtual void resize(int width, int height) = 0;
+        virtual void bindBuffer(int mipLevel) = 0;
         virtual ~RenderTarget() = default;
     };
 }

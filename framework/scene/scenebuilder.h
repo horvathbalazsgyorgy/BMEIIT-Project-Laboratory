@@ -12,7 +12,7 @@ namespace Framework {
     public:
         virtual void reset() = 0;
         virtual void draw(float dt, std::set<unsigned int> keysPressed) = 0;
-        void build() {
+        virtual void build() {
             reset();
             buildPrograms();
             buildMaterials();

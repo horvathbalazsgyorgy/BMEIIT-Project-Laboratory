@@ -12,10 +12,12 @@
 #include "opengl/loader/texture.h"
 
 #include "opengl/render/framebuffer.h"
+#include "opengl/render/framebuffercube.h"
 #include "opengl/render/rendertarget.h"
 #include "opengl/render/rendertexture.h"
 
 #include "opengl/application.h"
+#include "opengl/shaderbatch.h"
 #include "opengl/shaderprogram.h"
 
 #include "scene/scene.h"
@@ -25,6 +27,8 @@
 #include "uniform/uniformregistry.h"
 #include "uniform/uniformsource.h"
 
+#include "utility/buffertexture.h"
+#include "utility/dummytexture.h"
 #include "utility/mouse.h"
 
 #endif //PROJECTLABORATORY_FRAMEWORK_H

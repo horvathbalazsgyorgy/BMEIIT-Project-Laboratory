@@ -1,53 +1,73 @@
 #include "uniformsource.h"
 
-#include <stdexcept>
+#include <ranges>
 #include <utility>
-#include "../opengl/shaderprogram.h"
 #include "uniform.h"
+#include "../opengl/shaderprogram.h"
 
 namespace Framework {
+    void visit(Uniform* uniform, const Dump& var) {
+        std::visit([uniform](auto&& value)
+        {
+            using T = std::decay_t<decltype(value)>;
+            DumpVar uniformVar;
+            if constexpr (std::is_same_v<T, DumpProvider>) uniformVar = value();
+            else uniformVar = value;
+
+            std::visit([uniform](auto&& value) {
+                using D = std::decay_t<decltype(value)>;
+                if constexpr (std::is_same_v<D, Texture*>) {
+                    uniform->set(value);
+                }else {
+                    uniform->set(*value);
+                }
+            }, uniformVar);
+        }, var);
+    }
+
+    void UniformSource::initProvider(ShaderProgram* program) {
+        providers.emplace_back(program->ID(), [program](const std::string& name) {
+            return program->Registry().query(name);
+        });
+    }
+
     UniformSource::UniformSource(std::string prefix, const std::vector<ShaderProgram*>& programs) : glslPrefix(std::move(prefix)) {
         if (programs.empty())
             throw std::invalid_argument("Invalid argument; expected at least one shader program, but none were provided.");
-        for (auto program : programs) {
-            program->subscribe(this);
+        for (auto* program : programs) {
+            initProvider(program);
         }
     }
 
-    void UniformSource::update(const ShaderProgram* program) {
-        if (dump.variables.empty() || dump.uniforms.empty())
-            return;
+    void UniformSource::relink(const std::vector<ShaderProgram*>& programs) {
+        if (programs.empty())
+            throw std::invalid_argument("Invalid argument; expected at least one shader program to"
+                                        " perform hot reload, but none were provided.");
+        providers.clear();
+        for (auto* program : programs) {
+            initProvider(program);
+        }
 
-        for (const auto& key : dump.uniforms) {
-            if (auto uniform = program->queryUniform(key)) {
-                auto it = dump.variables.find(key);
-                if (it == dump.variables.end())
-                    throw std::runtime_error("Invalid dump entry; valid uniform "
-                                             "\"" + key + "\" not found in dump for auto binding.");
+        dump.clear();
+        initDump();
+    }
 
-                std::visit([uniform](auto&& value)
-                {
-                    using T = std::decay_t<decltype(value)>;
-                    if constexpr (std::is_same_v<T, Texture*>) {
-                        uniform->set(value);
-                    }else {
-                        uniform->set(*value);
-                    }
-                }, it->second);
+    void UniformSource::linkUniform(const std::string& name, const Dump& value) {
+        for (const auto& [id, provider] : providers) {
+            if (auto uniform = provider(glslPrefix + name)) {
+                dump.emplace_back(uniform, name, value, id);
             }
         }
     }
 
-    UniformSource& UniformSource::operator+=(const std::string& name) {
-        dump.uniforms.push_back(glslPrefix + '.' + name);
-        return *this;
-    }
+    void UniformSource::draw(const ShaderProgram *provider) {
+        if (dump.empty())
+            return;
 
-    Uniform* UniformSource::operator()(const std::string& name, const ShaderProgram* program) const {
-        const std::string glslUniform = glslPrefix + '.' + name;
-        program->useShaderProgram();
-        if (auto uniform = program->queryUniform(glslUniform))
-            return uniform;
-        throw std::runtime_error("Uniform \"" + glslUniform + "\" not found or is not in use.");
+        for (const auto& entry : dump) {
+            if (entry.provider == provider->ID()) {
+                visit(entry.uniform, entry.value);
+            }
+        }
     }
 }

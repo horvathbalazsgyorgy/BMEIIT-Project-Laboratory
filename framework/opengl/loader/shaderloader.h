@@ -6,7 +6,7 @@
 
 namespace Framework {
     class ShaderLoader {
-        ShaderLoader() { }
+        ShaderLoader() = default;
         static std::string convertGLSLToString(const char* shader);
     public:
         static GLuint createAndCompileShader(unsigned int type, const char* source);

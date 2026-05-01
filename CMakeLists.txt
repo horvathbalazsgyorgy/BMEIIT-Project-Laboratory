@@ -39,6 +39,7 @@ add_library(framework
         framework/opengl/loader/shaderloader.cpp
         framework/opengl/loader/texture.cpp
         framework/opengl/render/framebuffer.cpp
+        framework/opengl/render/framebuffercube.cpp
         framework/opengl/render/rendertexture.cpp
         framework/opengl/application.cpp
         framework/opengl/shaderprogram.cpp
