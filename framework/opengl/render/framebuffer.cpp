@@ -107,4 +107,15 @@ namespace Framework {
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[mipLevel]);
         glViewport(0, 0, (int)mipWidth, (int)mipHeight);
     }
+
+    void Framebuffer::syncDepth(const int mipLevel) const {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffers[mipLevel]);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(
+            0, 0, width, height,
+            0, 0, width, height,
+            GL_DEPTH_BUFFER_BIT, GL_NEAREST
+        );
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 }
