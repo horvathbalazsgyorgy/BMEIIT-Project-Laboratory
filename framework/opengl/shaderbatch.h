@@ -36,7 +36,11 @@ namespace Framework {
             }
         }
 
-        void execute() const {
+        void executeOne(const std::string& name) const {
+            (*this)[name]->notify();
+        }
+
+        void executeAll() const {
             for (const auto& program : batch) {
                 program->notify();
             }
