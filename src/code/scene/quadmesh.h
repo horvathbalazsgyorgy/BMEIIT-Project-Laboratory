@@ -9,14 +9,18 @@ using namespace Framework;
 class QuadMesh : public Mesh {
     GLuint vertexBuffer, vertexNormalBuffer, vertexTexCoordBuffer, indexBuffer, inputLayout;
 public:
-    QuadMesh(Material* boundMaterial) : Mesh(boundMaterial) { QuadMesh::createMesh(); }
+    QuadMesh(ShaderProgram* program, Material* boundMaterial)
+        : Mesh(program, boundMaterial)
+    {
+        QuadMesh::createMesh();
+    }
 
     void createMesh() override {
         const float vertices[] = {
-            -1.0f, -1.0f, 0.5f,
-            -1.0f,  1.0f, 0.5f,
-             1.0f, -1.0f, 0.5f,
-             1.0f,  1.0f, 0.5f
+            -1.0f, -1.0f, 0.0f,
+            -1.0f,  1.0f, 0.0f,
+             1.0f, -1.0f, 0.0f,
+             1.0f,  1.0f, 0.0f
         };
 
         const float normals[] = {
@@ -75,7 +79,6 @@ public:
     }
 
     void draw() override {
-        Mesh::draw();
         glBindVertexArray(inputLayout);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
