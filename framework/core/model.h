@@ -2,6 +2,7 @@
 #define PROJECTLABORATORY_MODEL_H
 
 #include <string>
+#include <utility>
 #include <vector>
 #include "../uniform/uniformsource.h"
 #include "glm/glm.hpp"
@@ -13,47 +14,42 @@ namespace Framework {
     class Material;
 
     class Model : public UniformSource {
+    protected:
         glm::vec3 position     = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::vec3 scale        = glm::vec3(1.0f, 1.0f, 1.0f);
+        glm::vec3 rotation     = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::mat4 modelMatrix  = glm::mat4(1.0f);
         glm::mat3 normalMatrix = glm::mat3(1.0f);
 
-        void initDump() override;
-    protected:
-        ShaderProgram* program;
         std::vector<Mesh*> meshes;
-        std::vector<Material*> materials;
+        void initDump() override;
     public:
         Model(ShaderProgram* program,
             glm::vec3 position = glm::vec3(0.0f),
-            glm::vec3 scale = glm::vec3(1.0f),
+            glm::vec3 scale    = glm::vec3(1.0f),
+            glm::vec3 rotation = glm::vec3(0.0f),
             const std::string& prefix = "model");
 
         Model(ShaderProgram* program,
-            Mesh* mesh,
-            Material* material,
-            glm::vec3 position,
-            glm::vec3 scale,
-            const std::string& prefix = "model")
-        : UniformSource(prefix, {program}), position(position), scale(scale), program(program), meshes{mesh}, materials{material}
-        {
-            Model::initDump();
-        }
-
-        Model(ShaderProgram* program,
             std::vector<Mesh*> meshes,
-            std::vector<Material*> materials,
+            glm::vec3 position = glm::vec3(0.0f),
+            glm::vec3 scale    = glm::vec3(1.0f),
+            glm::vec3 rotation = glm::vec3(0.0f),
             const std::string& prefix = "model")
-        : UniformSource(prefix, {program}), program(program), meshes(std::move(meshes)), materials(std::move(materials))
+        : UniformSource(prefix + '.', {program}),
+            position(position), scale(scale), rotation(rotation), meshes{std::move(meshes)}
         {
+            program->subscribe(this);
             Model::initDump();
         }
 
-        void setPosition(glm::vec3 pos) { this->position = pos; }
+        void setPosition(glm::vec3 pos)  { this->position = pos;  }
         void setScale(glm::vec3 scaling) { this->scale = scaling; }
+        void setRotation(glm::vec3 rot)  { this->rotation = rot;  }
 
         void update();
-        virtual void draw();
+        void draw(const ShaderProgram *provider) override;
+        void relink(const std::vector<ShaderProgram *> &programs) override;
         ~Model() override = default;
     };
 }

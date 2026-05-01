@@ -19,13 +19,6 @@ namespace Framework {
             }
         }
 
-        LightArray& operator+=(const std::string& name) {
-            for (auto& light : lights) {
-                *light += name;
-            }
-            return *this;
-        }
-
         Light& operator[](const int index) const {
             return *lights[index];
         }

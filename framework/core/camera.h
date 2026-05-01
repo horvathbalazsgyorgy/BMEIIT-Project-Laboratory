@@ -13,6 +13,7 @@ namespace Framework {
     class Uniform;
 
     class Camera : public UniformSource {
+    protected:
         glm::vec3 position;
         float pitch       =   0.0f,
               yaw         = -90.0f,
@@ -35,49 +36,31 @@ namespace Framework {
     public:
         Camera(const std::vector<ShaderProgram*>& programs,
             const glm::vec3 position,
+            const float pitch = 0.0f,
+            const float yaw   = -90.0f,
             const std::string& prefix = "camera")
-            : UniformSource(prefix, programs), position(position)
+            : UniformSource(prefix + '.', programs), position(position), pitch(pitch), yaw(yaw)
         {
-            Camera::initDump();
-            update();
-        }
-        Camera(const std::vector<ShaderProgram*>& programs,
-            const glm::vec3 position,
-            const float pitch,
-            const float yaw,
-            const std::string& prefix = "camera")
-            : UniformSource(prefix, programs), position(position), pitch(pitch), yaw(yaw)
-        {
+            for (auto* program : programs) {
+                program->subscribe(this);
+            }
             Camera::initDump();
             update();
         }
 
-        void setPosition(const glm::vec3 pos) {
-            this->position = pos;
-        }
-        void setRotation(const float p, const float y) {
-            pitch = p;
-            yaw = y;
-        }
-        void setFov(const float f) {
-            fov = f;
-        }
-        void setAspectRatio(const float aspectRatio) {
-            this->aspect = aspectRatio;
-        }
-        void setPlanes(const float n, const float f) {
-            nearPlane = n;
-            farPlane = f;
-        }
-        void setSpeed(const float s) {
-            speed = s;
-        }
-        void setSensitivity(const float sens) {
-            sensitivity = sens;
-        }
+        void setPosition(const glm::vec3 pos) { this->position = pos; }
+        void setRotation(const float p, const float y) { pitch = p; yaw = y; }
+        void setFov(const float f) { fov = glm::radians(f); }
+        void setAspectRatio(const float aspectRatio) { this->aspect = aspectRatio; }
+        void setPlanes(const float n, const float f) { nearPlane = n; farPlane = f; }
+        void setSpeed(const float s) { speed = s; }
+        void setSensitivity(const float sens) { sensitivity = sens; }
 
         void update();
+        void configureTransformation();
+        void configureCoordinateSystem(const glm::vec3& worldUp = glm::vec3(0.0f, 1.0f, 0.0f));
         void move(float dt, const std::set<unsigned int> &keysPressed);
+        void relink(const std::vector<ShaderProgram *> &programs) override;
 
         ~Camera() override = default;
     };

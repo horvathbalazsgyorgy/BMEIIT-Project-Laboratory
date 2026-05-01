@@ -5,9 +5,9 @@
 
 namespace Framework {
     void Camera::initDump() {
-        dump.variables[glslPrefix + ".viewProjMatrix"] = &viewProjection;
-        dump.variables[glslPrefix + ".rayDirMatrix"]   = &rayDir;
-        dump.variables[glslPrefix + ".position"]       = &position;
+        this->linkUniform("viewProjMatrix", &viewProjection);
+        this->linkUniform("rayDirMatrix", &rayDir);
+        this->linkUniform("position", &position);
     }
 
     void Camera::update() {
@@ -16,10 +16,25 @@ namespace Framework {
         }
 
         aspect = (float)WindowSize::width/(float)WindowSize::height;
+        configureCoordinateSystem();
+        configureTransformation();
+    }
+
+    void Camera::configureTransformation() {
         glm::mat4 view = glm::lookAt(position, position + ahead, vup);
         glm::mat4 projection = glm::perspective(fov, aspect, nearPlane, farPlane);
         viewProjection = projection * view;
         rayDir = inverse(translate(viewProjection, position));
+    }
+
+    void Camera::configureCoordinateSystem(const glm::vec3& worldUp) {
+        glm::vec3 dir;
+        dir.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+        dir.y = sin(glm::radians(pitch));
+        dir.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+        ahead = glm::normalize(dir);
+        right = glm::normalize(glm::cross(dir, worldUp));
+        vup = glm::normalize(glm::cross(right, ahead));
     }
 
     void Camera::move(const float dt, const std::set<unsigned int> &keysPressed) {
@@ -55,14 +70,13 @@ namespace Framework {
             position += vup * (dt * speed);
         }
 
-        glm::vec3 dir;
-        dir.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-        dir.y = sin(glm::radians(pitch));
-        dir.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-        ahead = glm::normalize(dir);
-        right = glm::normalize(glm::cross(dir, glm::vec3(0.0f, 1.0f, 0.0f)));
-        vup = glm::normalize(glm::cross(right, ahead));
-
         update();
+    }
+
+    void Camera::relink(const std::vector<ShaderProgram*>& programs) {
+        UniformSource::relink(programs);
+        for (auto* program : programs) {
+            program->subscribe(this);
+        }
     }
 }
