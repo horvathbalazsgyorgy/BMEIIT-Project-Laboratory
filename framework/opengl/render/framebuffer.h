@@ -4,35 +4,49 @@
 #include <memory>
 #include <vector>
 #include "../application.h"
+#include "rendertexture.h"
 #include "rendertarget.h"
 #include "glad/glad.h"
 
 namespace Framework {
-    class RenderTexture2D;
-
     class DefaultFramebuffer : public RenderTarget {
     public:
         DefaultFramebuffer(const int width = WindowSize::width, const int height = WindowSize::height)
             : RenderTarget(width, height) {}
 
-        void bindBuffer() override;
+        void resize(int width, int height) override;
+        void bindBuffer(int mipLevel) override;
     };
 
     class Framebuffer : public RenderTarget {
-        GLuint framebuffer, depthBuffer;
-        std::vector<std::unique_ptr<RenderTexture2D>> targets;
+    protected:
+        std::vector<GLuint> framebuffers, depthBuffers;
+        std::vector<GLenum> attachments;
+        std::vector<std::unique_ptr<RenderTexture>> targets;
+        int  nMip, nTarget;
+        bool complete;
+
+        Framebuffer(int width, int height) : RenderTarget(width, height), nMip(0), nTarget(0), complete(false) {}
+        void completeFramebuffer();
     public:
         Framebuffer(
-            int targetCount = 1,
-            int width = 512,
-            int height = 512,
-            GLenum internalFormat = GL_RGBA,
-            GLenum format = GL_RGBA,
-            GLenum type = GL_UNSIGNED_BYTE
+            int width,
+            int height,
+            int nMipLevel
         );
 
-        void bindBuffer() override;
-        RenderTexture2D* operator[](const int index) const {
+        virtual void bindTarget(
+            int targetCount,
+            GLenum internalFormat,
+            GLenum format,
+            GLenum type,
+            GLint  wrap,
+            TextureFiltering filter
+        );
+
+        void resize(int width, int height) override;
+        void bindBuffer(int mipLevel) override;
+        RenderTexture* operator[](const int index) const {
             return targets[index].get();
         }
     };
