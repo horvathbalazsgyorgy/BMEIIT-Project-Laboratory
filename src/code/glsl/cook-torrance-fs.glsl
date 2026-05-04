@@ -14,6 +14,33 @@ in vec3 viewDir;
 in vec4 color;
 in vec2 tex[4];
 
+uniform struct{
+    sampler2D albedoMap1;
+    sampler2D normalMap1;
+    sampler2D mrMap1;
+    sampler2D aoMap1;
+
+    int albedoMap1_uv;
+    int normalMap1_uv;
+    int mrMap1_uv;
+    int aoMap1_uv;
+} material;
+
+uniform struct{
+    vec4 position;
+    vec3 emittance;
+} lights[4];
+
+uniform int   spherical;
+uniform float exposure;
+uniform float LoD;
+uniform sampler2D LuT;
+uniform samplerCube irradianceMap;
+uniform samplerCube prefilterMap;
+
+out vec4 fragmentColor;
+const float PI = 3.14159265359;
+
 struct SHBase{
     float[9] values;
 };
@@ -32,31 +59,16 @@ SHBase GetBase(vec3 dir){
     return base;
 }
 
-uniform struct{
-    sampler2D albedoMap1;
-    sampler2D normalMap1;
-    sampler2D mrMap1;
-    sampler2D aoMap1;
-
-    int albedoMap1_uv;
-    int normalMap1_uv;
-    int mrMap1_uv;
-    int aoMap1_uv;
-} material;
-
-uniform struct{
-    vec4 position;
-    vec3 emittance;
-} lights[3];
-
-uniform float exposure;
-uniform float LoD;
-uniform sampler2D LuT;
-uniform samplerCube irradianceMap;
-uniform samplerCube prefilterMap;
-
-out vec4 fragmentColor;
-const float PI = 3.14159265359;
+//Courtesy of Krzysztof Narkowicz
+//https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
+vec3 ACEScurve(vec3 x){
+    float a = 2.51f;
+    float b = 0.03f;
+    float c = 2.43f;
+    float d = 0.59f;
+    float e = 0.14f;
+    return clamp(vec3((x * (a*x+b)) / (x * (c*x+d) + e)), 0.0, 1.0);
+}
 
 //Normal Distribution function - Using the Trowbridge-Reitz GGX
 float Distribution(float roughness, float cost){
@@ -133,19 +145,22 @@ vec3 shadeIBL(vec3 normal, vec3 viewDir, vec3 albedo, float roughness, float met
     vec3 kd = vec3(1.0f) - ks;
     kd *= 1.0f - metallic;
 
-    //Irradiance using Spherical Harmonics
-    SHBase normalBase = GetBase(normal);
-    vec3 irradiance = vec3(0.0f);
-    for(int i = 0; i < 9; i++){
-        irradiance += SHColor.radiance[i].xyz * normalBase.values[i];
+    vec3 diffuse = vec3(0.0f);
+    if(spherical == 0){
+        //Irradiance using Spherical Harmonics
+        SHBase normalBase = GetBase(normal);
+        vec3 irradiance = vec3(0.0f);
+        for(int i = 0; i < 9; i++){
+            irradiance += SHColor.radiance[i].xyz * normalBase.values[i];
+        }
+        diffuse = max(irradiance, 0.0) * albedo * (1.0f / PI);
+    }else{
+        //Irradiance using sanitized irradiance map
+        vec3 irradiance = texture(irradianceMap, normal).rgb;
+        diffuse = irradiance * albedo;
     }
-    vec3 diffuse = max(irradiance, 0.0) * albedo * (1.0f / PI);
 
-    //Irradiance using irradiance map
-    //vec3 irradiance = texture(irradianceMap, normal).rgb;
-    //vec3 diffuse    = irradiance * albedo;
-
-    //Specular using (clamped) pre-filter map
+    //Specular using sanitized pre-filter map
     vec3 reflection     = reflect(-viewDir, normal);
     vec3 prefilterColor = textureLod(prefilterMap, reflection, roughness * LoD).rgb;
     vec2 envBRDF  = texture(LuT, vec2(cosb, roughness)).rg;
@@ -178,7 +193,7 @@ void main(void) {
     float metallic  = metallicRougness.b;
 
     vec3 L0 = vec3(0.0f);
-    for(int i = 0; i < 3; i++){
+    for(int i = 0; i < 4; i++){
         vec3  lightDiff = lights[i].position.xyz - lights[i].position.w * worldPosition.xyz;
         vec3  lightDir  = normalize(lightDiff);
         float distance    = length(lightDiff) * lights[i].position.w;
@@ -192,6 +207,7 @@ void main(void) {
     vec3 ambient = shadeIBL(normal, viewDir, albedo, roughness, metallic, ao);
     vec3 color = L0 + ambient;
 
-    vec3 toneMapped = vec3(1.0f) - exp(-color * exposure);
+    color *= exposure;
+    vec3 toneMapped = ACEScurve(color);
     fragmentColor = vec4(toneMapped, 1.0f);
 }

@@ -22,7 +22,7 @@ uniform struct{
     vec4 position;
     vec3 emittance;
     vec3 ambient;
-} lights[3];
+} lights[4];
 
 out vec4 fragmentColor;
 
@@ -66,7 +66,7 @@ void main(void) {
 
     vec3 normal = normalize(TBN * tangentNormal);
 
-    for (int i = 0; i < 3; i++){
+    for (int i = 0; i < 4; i++){
         vec3 lightDiff = lights[i].position.xyz - lights[i].position.w * worldPosition.xyz;
         vec3 lightDir  = normalize(lightDiff);
         float distance = length(lightDiff);
