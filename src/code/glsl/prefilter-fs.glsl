@@ -79,8 +79,11 @@ void main(void) {
             float mipSample = 1.0f / (float(nSamples) * densityFuction + 0.0001);
             float mipLevel  = material.roughness == 0.0f ? 0.0f : 0.5f * log2(mipSample / mipTexel);
 
-            prefilterColor += textureLod(material.envTexture, lightDir, mipLevel).rgb * cosa;
-            totalWeight    += cosa;
+            vec3 sampleColor = textureLod(material.envTexture, lightDir, mipLevel).rgb;
+            if(!any(isnan(sampleColor)) && !any(isinf(sampleColor))){
+                prefilterColor += sampleColor * cosa;
+                totalWeight    += cosa;
+            }
         }
     }
 

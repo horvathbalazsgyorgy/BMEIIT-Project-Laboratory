@@ -15,7 +15,7 @@ void main(void) {
     vec3 normal = normalize(rayDir.xyz);
     vec3 irradiance = vec3(0.0f);
 
-    vec3 worldUp = vec3(0.0f, 1.0f, 0.0f);
+    vec3 worldUp = abs(normal.z) < 0.999 ? vec3(0.0f, 0.0f, 1.0f) : vec3(1.0f, 0.0f, 0.0f);
     vec3 right   = normalize(cross(worldUp, normal));
     vec3 up      = cross(normal, right);
 
@@ -30,8 +30,11 @@ void main(void) {
 
             vec3 sampleVector = tangent.x * right + tangent.y * up + tangent.z * normal;
 
-            irradiance += texture(material.envTexture, sampleVector).rgb * cos(zenith) * sin(zenith);
-            numSamples += 1.0f;
+            vec3 sampleColor = texture(material.envTexture, sampleVector).rgb;
+            if(!any(isnan(sampleColor)) && !any(isinf(sampleColor))){
+                irradiance += sampleColor * cos(zenith) * sin(zenith);
+                numSamples += 1.0f;
+            }
         }
     }
 
