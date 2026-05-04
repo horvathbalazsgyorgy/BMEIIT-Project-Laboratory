@@ -12,8 +12,9 @@
 namespace Framework {
     struct ShaderProperty {
         const char* name;
-        const char* vs;
+        const char* vcs;
         const char* fs;
+        const char* gs;
     };
 
     class ShaderBatch {
@@ -27,22 +28,31 @@ namespace Framework {
                 throw std::invalid_argument("Invalid argument; expected at least one shader defining property,"
                                             " but none were provided.");
 
-            for (const auto& [name, vs, fs] : properties) {
+            for (const auto& [name, vcs, fs, gs] : properties) {
                 batchIndices[name] = nShaders++;
 
-                auto vertexShader   = ShaderLoader::createAndCompileShader(GL_VERTEX_SHADER,   vs);
-                auto fragmentShader = ShaderLoader::createAndCompileShader(GL_FRAGMENT_SHADER, fs);
-                batch.emplace_back(std::make_unique<ShaderProgram>(vertexShader, fragmentShader));
+                if (vcs && !fs) {
+                    auto computeShader  = ShaderLoader::createAndCompileShader(GL_COMPUTE_SHADER, vcs);
+                    batch.emplace_back(std::make_unique<ShaderProgram>(computeShader));
+                }else {
+                    auto vertexShader   = ShaderLoader::createAndCompileShader(GL_VERTEX_SHADER,  vcs);
+                    auto fragmentShader = ShaderLoader::createAndCompileShader(GL_FRAGMENT_SHADER, fs);
+                    auto geometryShader = 0;
+                    if (gs != nullptr) {
+                        geometryShader = ShaderLoader::createAndCompileShader(GL_GEOMETRY_SHADER, gs);
+                    }
+                    batch.emplace_back(std::make_unique<ShaderProgram>(vertexShader, fragmentShader, geometryShader));
+                }
             }
         }
 
         void executeOne(const std::string& name) const {
-            (*this)[name]->notify();
+            (*this)[name]->execute();
         }
 
         void executeAll() const {
             for (const auto& program : batch) {
-                program->notify();
+                program->execute();
             }
         }
 
