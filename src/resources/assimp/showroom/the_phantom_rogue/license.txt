@@ -1,0 +1,11 @@
+Model Information:
+* title:	The Phantom Rogue
+* source:	https://sketchfab.com/3d-models/the-phantom-rogue-a4938aaa56f3436a9559acc6af929826
+* author:	KhoaMinh (https://sketchfab.com/duongminhkhoa231)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "The Phantom Rogue" (https://sketchfab.com/3d-models/the-phantom-rogue-a4938aaa56f3436a9559acc6af929826) by KhoaMinh (https://sketchfab.com/duongminhkhoa231) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
