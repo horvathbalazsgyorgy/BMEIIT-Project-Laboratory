@@ -2,6 +2,10 @@
 
 precision highp float;
 
+layout (std430, binding = 1) buffer SHData{
+    vec4 radiance[9];
+} SHColor;
+
 in vec4 worldPosition;
 in vec4 worldNormal;
 in vec4 worldTangent;
@@ -9,6 +13,24 @@ in vec4 worldBitangent;
 in vec3 viewDir;
 in vec4 color;
 in vec2 tex[4];
+
+struct SHBase{
+    float[9] values;
+};
+
+SHBase GetBase(vec3 dir){
+    SHBase base;
+    base.values[0] = 1.0f;
+    base.values[1] = dir.y;
+    base.values[2] = dir.z;
+    base.values[3] = dir.x;
+    base.values[4] = dir.x * dir.y;
+    base.values[5] = dir.y * dir.z;
+    base.values[6] = (3.0f * dir.z*dir.z - 1.0f);
+    base.values[7] = dir.x * dir.z;
+    base.values[8] = (dir.x*dir.x - dir.y*dir.y);
+    return base;
+}
 
 uniform struct{
     sampler2D albedoMap1;
@@ -105,14 +127,25 @@ vec3 shadeIBL(vec3 normal, vec3 viewDir, vec3 albedo, float roughness, float met
     vec3 F0 = vec3(0.04f);
     F0 = mix(F0, albedo, metallic);
 
+    //Fresnel
     vec3 F  = FresnelRoughness(F0, cosb, roughness);
     vec3 ks = F;
     vec3 kd = vec3(1.0f) - ks;
     kd *= 1.0f - metallic;
 
-    vec3 irradiance = texture(irradianceMap, normal).rgb;
-    vec3 diffuse    = irradiance * albedo;
+    //Irradiance using Spherical Harmonics
+    SHBase normalBase = GetBase(normal);
+    vec3 irradiance = vec3(0.0f);
+    for(int i = 0; i < 9; i++){
+        irradiance += SHColor.radiance[i].xyz * normalBase.values[i];
+    }
+    vec3 diffuse = max(irradiance, 0.0) * albedo * (1.0f / PI);
 
+    //Irradiance using irradiance map
+    //vec3 irradiance = texture(irradianceMap, normal).rgb;
+    //vec3 diffuse    = irradiance * albedo;
+
+    //Specular using (clamped) pre-filter map
     vec3 reflection     = reflect(-viewDir, normal);
     vec3 prefilterColor = textureLod(prefilterMap, reflection, roughness * LoD).rgb;
     vec2 envBRDF  = texture(LuT, vec2(cosb, roughness)).rg;
@@ -159,5 +192,6 @@ void main(void) {
     vec3 ambient = shadeIBL(normal, viewDir, albedo, roughness, metallic, ao);
     vec3 color = L0 + ambient;
 
-    fragmentColor = vec4(color, 1.0f);
+    vec3 toneMapped = vec3(1.0f) - exp(-color * exposure);
+    fragmentColor = vec4(toneMapped, 1.0f);
 }
