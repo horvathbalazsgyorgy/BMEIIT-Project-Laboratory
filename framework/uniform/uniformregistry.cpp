@@ -1,7 +1,6 @@
 #include "uniformregistry.h"
 
 #include <vector>
-#include "uniform.h"
 
 namespace {
     struct UniformFactory {

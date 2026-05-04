@@ -24,6 +24,9 @@ namespace Framework {
     }
 
     GLuint ShaderLoader::createAndCompileShader(unsigned int type, const char* source) {
+        if (type == GL_TESS_CONTROL_SHADER || type == GL_TESS_EVALUATION_SHADER)
+            throw std::invalid_argument("Invalid argument; tesselation shaders are not supported at the moment.");
+
         auto shaderID = glCreateShader(type);
         std::string shaderCode = convertGLSLToString(source);
         const char* code = shaderCode.c_str();
@@ -39,7 +42,12 @@ namespace Framework {
             std::string infoLog(infoLogLength, '\0');
             glGetShaderInfoLog(shaderID, infoLogLength, nullptr, infoLog.data());
 
-            std::string shaderType = type == GL_VERTEX_SHADER ? "vertex" : "fragment";
+            std::string shaderType;
+            if      (type == GL_VERTEX_SHADER)   { shaderType = "vertex";   }
+            else if (type == GL_FRAGMENT_SHADER) { shaderType = "fragment"; }
+            else if (type == GL_GEOMETRY_SHADER) { shaderType = "geometry"; }
+            else if (type == GL_COMPUTE_SHADER)  { shaderType = "compute";  }
+            else shaderType = "unknown";
             throw std::runtime_error("Error compiling " + shaderType + " shader "
                                     "(" + std::string(source) + "):\n" + infoLog);
         }

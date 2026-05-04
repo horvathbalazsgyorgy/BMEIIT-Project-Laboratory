@@ -72,6 +72,11 @@ namespace Framework {
             }
         }
 
+        void flush() {
+            providers.clear();
+            dump.clear();
+        }
+
         static MiscSource& use() {
             static MiscSource miscellaneous;
             return miscellaneous;
