@@ -24,7 +24,12 @@ class Builder3D : public SceneBuilder {
     MiscSource& miscellaneous = MiscSource::use();
     float exposure, LoD;
     float timeSinceLastHotreload = 0.0f;
+    float timeSinceLastIrradianceChange = 0.0f;
+    int   spherical;
 
+    GLuint ssbo1, ssbo2;
+
+    void setupSSBO();
     void precompute();
     void buildPrograms() override;
     void buildMeshes() override;
@@ -35,7 +40,7 @@ class Builder3D : public SceneBuilder {
     void buildLights();
     void buildUniforms();
 public:
-    Builder3D() : SceneBuilder(), exposure(1.0f), LoD(5) { }
+    Builder3D() : SceneBuilder(), exposure(1.0f), LoD(5), spherical(true) { }
 
     void reset() override {
         models.clear();
