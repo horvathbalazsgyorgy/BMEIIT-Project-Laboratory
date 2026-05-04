@@ -82,12 +82,11 @@ void AssimpModel::load(const std::string& filePath, AssimpContext context) {
     if (rigging.nBones > 1) {
         context.node = scene->mRootNode;
         context.modelMatrix = glm::mat4(1.0f);
-
         processBoneHierarchy(context);
-        riggingTexture = makeRiggingTexture();
 
         std::cout << "\tNum of bones: " << rigging.nBones << std::endl;
     }
+    riggingTexture = makeRiggingTexture();
 }
 
 void AssimpModel::processBoneHierarchy(AssimpContext context) {
