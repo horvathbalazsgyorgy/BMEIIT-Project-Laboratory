@@ -107,7 +107,7 @@ public:
 class DummyDatabase {
     std::unordered_map<TextureType, std::unique_ptr<DummyTexture>> dummyTextures;
     DummyDatabase() {
-        dummyTextures.emplace(ALBEDO,    std::make_unique<DummyTexture>(GRAYSCALE, std::vector<unsigned char>{0, 0, 0}));
+        dummyTextures.emplace(ALBEDO,    std::make_unique<DummyTexture>(sRGB,      std::vector<unsigned char>{0, 0, 0}));
         dummyTextures.emplace(SPECULAR,  std::make_unique<DummyTexture>(LINEAR,    std::vector<unsigned char>{255, 255, 255}));
         dummyTextures.emplace(NORMAL,    std::make_unique<DummyTexture>(LINEAR,    std::vector<unsigned char>{128, 128, 255}));
         dummyTextures.emplace(ROUGHNESS, std::make_unique<DummyTexture>(GRAYSCALE, std::vector<unsigned char>{128, 128, 128}));
@@ -127,18 +127,30 @@ public:
     }
 };
 
+struct AssimpJobState {
+    int iterator;
+    std::vector<AssimpMesh*> jobs;
+};
+
+/**
+ * Static context for asynchronous loading.
+ */
+struct AssimpStaticContext {
+    std::string path;
+    ShaderProgram* program;
+};
+
 /**
  * Build context for easier passing of parameters between functions.
  */
-struct AssimpContext {
-    ShaderProgram* program;
+struct AssimpBuildContext {
     const aiScene* scene;
     const aiNode*  node;
     const aiMesh*  mesh;
     glm::mat4 modelMatrix;
 };
 
-class AssimpModel : public Model {
+class AssimpModel : public Model, public JobVisitor {
     std::string directory;
     std::vector<AssimpMaterial*> materials;
     std::vector<TextureType> textureTypes;
@@ -151,17 +163,20 @@ class AssimpModel : public Model {
     Rigging rigging;
     Texture* riggingTexture;
 
-    //Model counter for logging
-    static inline int loaded = 0;
+    //Static context for asynchronous loading
+    AssimpStaticContext context;
+
+    //State tracking for loading/completing the model
+    AssimpJobState state;
 
     //Functions for generating/querying materials and textures
     Material*  makeMaterial(ShaderProgram* program, const std::unordered_map<std::string, std::pair<std::string, int>>& textures);
     [[nodiscard]] Texture* makeRiggingTexture() const;
 
     //Processing functions
-    void processBoneHierarchy(AssimpContext context);
-    void processNode(AssimpContext context);
-    AssimpMesh* processMesh(AssimpContext& context);
+    void processBoneHierarchy(AssimpBuildContext buildContext);
+    void processNode(AssimpBuildContext buildContext);
+    AssimpMesh* processMesh(AssimpBuildContext& buildContext);
     void processTextureType(
         TextureType type,
         const aiMaterial* assimpMat,
@@ -186,14 +201,14 @@ public:
         Args... args)
     : Model(program, position, scale, rotation) {
         textureTypes = {args...};
-        load(path, AssimpContext(program));
+        context.path = path;
+        context.program = program;
 
-        AssimpModel::initDump();
-        for (auto* material : materials) {
-            material->initDump();
-        }
+        ThreadPool::enqueueJob(this);
     }
-    void load(const std::string& filePath, AssimpContext context);
+    void load(const std::string& filePath);
+    void run() override;
+    bool complete() override;
 };
 
 #endif //PROJECTLABORATORY_ASSIMPMODEL_H

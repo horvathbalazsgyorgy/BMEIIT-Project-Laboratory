@@ -25,12 +25,16 @@ class AssimpMesh : public Mesh {
     std::vector<Vertex> vertexData;
     std::vector<unsigned int> indices;
     Material* boundMaterial;
+
+    bool initialized;
+    int iVertex, iIndex;
+
+    static constexpr size_t chunk = 2000;
 public:
     AssimpMesh(ShaderProgram* program, std::vector<Vertex> vertices, std::vector<unsigned int> indices, Material* boundMaterial)
-        : Mesh(program, boundMaterial), vertexData(std::move(vertices)), indices(std::move(indices))
-    {
-        AssimpMesh::createMesh();
-    }
+        : Mesh(program, boundMaterial), vertexData(std::move(vertices)), indices(std::move(indices)),
+          initialized(false), iVertex(0), iIndex(0)
+    { /*AssimpMesh::createMesh();*/ }
 
     void createMesh() override {
         glGenVertexArrays(1, &inputLayout);
@@ -40,10 +44,10 @@ public:
         glBindVertexArray(inputLayout);
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vertex), &vertexData[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vertex), nullptr, GL_STATIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), nullptr, GL_STATIC_DRAW);
 
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
@@ -75,9 +79,38 @@ public:
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
+    bool streamMesh() {
+        if (!initialized) {
+            createMesh();
+            initialized = true;
+            return false;
+        }
+
+        if (iVertex != vertexData.size()) {
+            const int voPtr = vertexData.size() - (iVertex + chunk);
+            const unsigned int vOffset = voPtr <= 0 ? voPtr + chunk : chunk;
+            glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+            glBufferSubData(GL_ARRAY_BUFFER, sizeof(Vertex) * iVertex, sizeof(Vertex) * vOffset, &vertexData[iVertex]);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            iVertex += vOffset;
+            return false;
+        }
+
+        if (iIndex != indices.size()) {
+            const int ioPtr = indices.size() - (iIndex  + chunk);
+            const unsigned int iOffset = ioPtr <= 0 ? ioPtr + chunk : chunk;
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * iIndex, sizeof(unsigned int) * iOffset, &indices[iIndex]);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            iIndex  += iOffset;
+            return false;
+        }
 
         vertexData.clear();
         vertexData.shrink_to_fit();
+        return true;
     }
 
     void draw() override {

@@ -1,6 +1,5 @@
 #include "assimpmodel.h"
 
-#include <iostream>
 #include "assimpmesh.h"
 #include "assimpmaterial.h"
 #include "assimp/Importer.hpp"
@@ -43,9 +42,7 @@ Texture* AssimpModel::makeRiggingTexture() const {
     return new BufferTexture(GL_RGBA32F, buffer);
 }
 
-void AssimpModel::load(const std::string& filePath, AssimpContext context) {
-    std::cout << "Model " << loaded << ": ";
-
+void AssimpModel::load(const std::string& filePath) {
     Assimp::Importer importer;
     importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
     const aiScene* scene = importer.ReadFile(filePath.c_str(),
@@ -55,77 +52,104 @@ void AssimpModel::load(const std::string& filePath, AssimpContext context) {
         | aiProcess_JoinIdenticalVertices
         | aiProcess_ImproveCacheLocality
         | aiProcess_LimitBoneWeights
-        | aiProcess_RemoveRedundantMaterials
-        | aiProcess_SortByPType
         | aiProcess_FindDegenerates
         | aiProcess_FindInvalidData
-        | aiProcess_GlobalScale
-        | aiProcess_ValidateDataStructure);
+        | aiProcess_OptimizeMeshes
+        | aiProcess_OptimizeGraph);
 
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
-        //TODO: Unified Logger class in Framework to get rid of unnecessary exceptions like below
-        throw std::runtime_error("Error loading Assimp model (" + filePath + "): " + importer.GetErrorString());
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+        ApplicationError::FileNotFound("model", filePath);
+        return;
+    }
 
     directory = filePath.substr(0, filePath.find_last_of('/'));
 
-    context.scene = scene;
-    context.node = scene->mRootNode;
-    context.modelMatrix = glm::mat4(1.0f);
-    processNode(context);
-    loaded++;
-
-    std::cout << "Loaded" << std::endl;
-    std::cout << "\tMeshes: " << meshes.size() << std::endl;
-    std::cout << "\tMaterials: " << materials.size() << std::endl;
+    AssimpBuildContext buildContext{};
+    buildContext.scene = scene;
+    buildContext.node = scene->mRootNode;
+    buildContext.modelMatrix = glm::mat4(1.0f);
+    processNode(buildContext);
 
     //rootInverseTransformation = glm::inverse(aiMatrix4x4ToGlm4x4(scene->mRootNode->mTransformation));
     if (rigging.nBones > 1) {
-        context.node = scene->mRootNode;
-        context.modelMatrix = glm::mat4(1.0f);
-        processBoneHierarchy(context);
-
-        std::cout << "\tNum of bones: " << rigging.nBones << std::endl;
+        buildContext.node = scene->mRootNode;
+        buildContext.modelMatrix = glm::mat4(1.0f);
+        processBoneHierarchy(buildContext);
     }
-    riggingTexture = makeRiggingTexture();
 }
 
-void AssimpModel::processBoneHierarchy(AssimpContext context) {
-    auto node = context.node;
-    context.modelMatrix = context.modelMatrix * aiMatrix4x4ToGlm4x4(node->mTransformation);
+void AssimpModel::run() {
+    state.iterator = 0;
+    load(context.path);
+}
+
+bool AssimpModel::complete() {
+    if (state.iterator >= state.jobs.size()) {
+        meshes.reserve(state.jobs.size());
+        for (auto* mesh : state.jobs) {
+            meshes.push_back(mesh);
+        }
+        state.jobs.clear();
+        riggingTexture = makeRiggingTexture();
+
+        AssimpModel::initDump();
+        for (auto* material : materials) {
+            material->initDump();
+        }
+
+        const std::string numBones = rigging.nBones > 1 ? "\tNum of bones: " + std::to_string(rigging.nBones) + "\n\n" : "\n";
+        const std::string message = "Model loaded:\n"
+                                    "\tMeshes: "    + std::to_string(meshes.size())    + "\n"
+                                    "\tMaterials: " + std::to_string(materials.size()) + "\n"
+                                                    + numBones;
+        ApplicationInfo::GeneralInformation(message);
+        return true;
+    }
+
+    const auto& mesh = state.jobs[state.iterator];
+    if (mesh->streamMesh()) {
+        state.iterator++;
+    }
+    return false;
+}
+
+void AssimpModel::processBoneHierarchy(AssimpBuildContext buildContext) {
+    auto node = buildContext.node;
+    buildContext.modelMatrix = buildContext.modelMatrix * aiMatrix4x4ToGlm4x4(node->mTransformation);
 
     auto iBone = rigging.boneIndices.find(node->mName.C_Str());
     if (iBone != rigging.boneIndices.end()) {
         auto& bone = rigging.bones[iBone->second];
-        bone.boneModelMatrix = context.modelMatrix * bone.boneOffsetMatrix;
+        bone.boneModelMatrix = buildContext.modelMatrix * bone.boneOffsetMatrix;
     }
 
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        context.node = node->mChildren[i];
-        processBoneHierarchy(context);
+        buildContext.node = node->mChildren[i];
+        processBoneHierarchy(buildContext);
     }
 }
 
-void AssimpModel::processNode(AssimpContext context) {
-    auto node = context.node;
-    context.modelMatrix = context.modelMatrix * aiMatrix4x4ToGlm4x4(node->mTransformation);
+void AssimpModel::processNode(AssimpBuildContext buildContext) {
+    auto node = buildContext.node;
+    buildContext.modelMatrix = buildContext.modelMatrix * aiMatrix4x4ToGlm4x4(node->mTransformation);
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
-        context.mesh = context.scene->mMeshes[node->mMeshes[i]];
-        meshes.push_back(processMesh(context));
+        buildContext.mesh = buildContext.scene->mMeshes[node->mMeshes[i]];
+        state.jobs.push_back(processMesh(buildContext));
     }
 
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        context.node = node->mChildren[i];
-        processNode(context);
+        buildContext.node = node->mChildren[i];
+        processNode(buildContext);
     }
 }
 
-AssimpMesh* AssimpModel::processMesh(AssimpContext& context) {
-    auto mesh = context.mesh;
+AssimpMesh* AssimpModel::processMesh(AssimpBuildContext& buildContext) {
+    auto mesh = buildContext.mesh;
     std::vector<Vertex> vertices(mesh->mNumVertices);
     std::vector<unsigned int> indices;
-    aiMaterial* assimpMaterial = context.scene->mMaterials[mesh->mMaterialIndex];
+    aiMaterial* assimpMaterial = buildContext.scene->mMaterials[mesh->mMaterialIndex];
 
-    glm::mat4 transformationMatrix = context.modelMatrix;
+    glm::mat4 transformationMatrix = buildContext.modelMatrix;
     glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(transformationMatrix)));
 
     if (mesh->HasBones()) {
@@ -263,8 +287,8 @@ void AssimpModel::processTextureType(const TextureType type, const aiMaterial* a
         int UV = 0;
         assimpMat->Get(AI_MATKEY_UVWSRC(type, i), UV);
         if (UV >= 4) {
-            throw std::runtime_error("Fatal error; models which use more than 4 UV channels"
-                                     " are currently not supported.");
+            ApplicationError::ComponentNotSupported("model", "models which use more than 4 UV channels");
+            return;
         }
 
         std::string texturePath = directory + '/' + textureName.C_Str();
@@ -281,7 +305,9 @@ void AssimpModel::processTextureType(const TextureType type, const aiMaterial* a
                 encoding = sRGB;
             if (type == ROUGHNESS || type == METALLIC || type == AMBIENT_OCCLUSION)
                 encoding = GRAYSCALE;
-            loadedTextures[texturePath] = new Texture2D(encoding, texturePath);
+
+            loadedTextures[texturePath] = new Texture2D(dummyTextures[type]->ID(), encoding, texturePath);
+            ThreadPool::enqueueJob(loadedTextures[texturePath]);
         }
         textureIncrement++;
     }
