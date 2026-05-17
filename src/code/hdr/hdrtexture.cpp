@@ -8,7 +8,8 @@ HDRTexture::HDRTexture(const std::string &filePath) {
     float* data = stbi_loadf(filePath.c_str(), &width, &height, &channels, 0);
     if (!data) {
         stbi_image_free(data);
-        throw std::runtime_error("Failed to load HDR texture file at the following path: " + filePath);
+        ApplicationError::FileNotFound("HDR texture", filePath);
+        return;
     }
 
     GLint internalFormat = channels == 4 ? GL_RGBA16F : GL_RGB16F;
