@@ -2,11 +2,12 @@
 #define PROJECTLABORATORY_UNIFORM_H
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <variant>
 #include <concepts>
-#include <stdexcept>
 
+#include "../message/variants/applicationerror.h"
 #include "../opengl/loader/texture.h"
 #include "glad/glad.h"
 #include "glm/glm.hpp"
@@ -33,8 +34,8 @@ namespace Framework {
         GLenum type;
         virtual void process(std::vector<PrimitiveType> primitives) = 0;
     public:
-        Uniform(const std::string& name, const GLint location, const GLenum type) :
-            name(name), location(location), type(type) {}
+        Uniform(std::string  name, const GLint location, const GLenum type) :
+            name(std::move(name)), location(location), type(type) {}
         virtual void set(MatType matrix) = 0;
         virtual void set(VecType vector) = 0;
         virtual void set(Texture* texture) = 0;
@@ -61,7 +62,7 @@ namespace Framework {
         Size == 4
     )
     class UniformFloat : public Uniform {
-        void commit(const float* pValues) {
+        void commit(const float* pValues) const {
             switch (type) {
                 case GL_FLOAT:
                     glUniform1fv(location, 1, pValues);
@@ -82,18 +83,18 @@ namespace Framework {
 
         void process(std::vector<PrimitiveType> primitives) override {
             size_t N = primitives.size();
-            if (N != Size)
-                throw std::invalid_argument("Incorrect amount of parameters for uniform"
-                                            " \"" + name + "\"; expected " + std::to_string(Size) +
-                                            ", but found " + std::to_string(N) + ".");
+            if (N != Size) {
+                ApplicationError::UniformMismatch(name, std::to_string(Size) + " primitives", std::to_string(N));
+                return;
+            }
+
             float values[Size];
             try {
                 for (int i = 0; i < N; i++) {
                     values[i] = std::get<float>(primitives[i]);
                 }
-            }catch (std::exception &ex) {
-                throw std::invalid_argument("Incorrect parameter type(s) for uniform"
-                                            " \"" + name + "\"; expected float(s), but found non-float(s).");
+            }catch (...) {
+                ApplicationError::UniformMismatch(name, "float(s)", "non-float(s)");
             }
             commit(values);
         }
@@ -102,36 +103,26 @@ namespace Framework {
             Uniform(name, location, type) { }
 
         void set(MatType matrix) override {
-            throw std::runtime_error("Incorrect parameter type for uniform"
-                                     " \"" + name + "\"; expected float(s), but found matrix.");
+            ApplicationError::UniformMismatch(name, "float(s)", "matrix");
         }
 
         void set(VecType vector) override {
             if (const auto v2 = std::get_if<glm::vec2>(&vector)){
                 Size == 2 ? commit(glm::value_ptr(*v2)) :
-                throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\"; expected vec" + std::to_string(Size) +
-                                            ", but found vec2.");
+                ApplicationError::UniformMismatch(name, "vec" + std::to_string(Size), "vec2");
             } else if (const auto v3 = std::get_if<glm::vec3>(&vector)) {
                 Size == 3 ? commit(glm::value_ptr(*v3)) :
-                throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\"; expected vec" + std::to_string(Size) +
-                                            ", but found vec3.");
+                ApplicationError::UniformMismatch(name, "vec" + std::to_string(Size), "vec3");
             } else if (const auto v4 = std::get_if<glm::vec4>(&vector)) {
                 Size == 4 ? commit(glm::value_ptr(*v4)) :
-                throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\"; expected vec" + std::to_string(Size) +
-                                            ", but found vec4.");
+                ApplicationError::UniformMismatch(name, "vec" + std::to_string(Size), "vec4");
             } else {
-                throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\"; expected a vector of floats"
-                                            ", but found otherwise.");
+                ApplicationError::UniformMismatch(name, "a vector of floats", "otherwise");
             }
         }
 
         void set(Texture* texture) override {
-            throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\"; it is a non-texture uniform.");
+            ApplicationError::UniformMismatch(name, "non-texture", "texture");
         }
     };
 
@@ -144,7 +135,7 @@ namespace Framework {
         Size == 4
     )
     class UniformInt : public Uniform {
-        void commit(const int* pValues) {
+        void commit(const int* pValues) const {
             switch (type) {
                 case GL_INT:
                     glUniform1iv(location, 1, pValues);
@@ -165,18 +156,18 @@ namespace Framework {
 
         void process(std::vector<PrimitiveType> primitives) override {
             size_t N = primitives.size();
-            if (N != Size)
-                throw std::invalid_argument("Incorrect amount of parameters for uniform"
-                                            " \"" + name + "\"; expected " + std::to_string(Size) +
-                                            ", but found " + std::to_string(N) + ".");
+            if (N != Size) {
+                ApplicationError::UniformMismatch(name, std::to_string(Size) + " primitives", std::to_string(N));
+                return;
+            }
+
             int values[Size];
             try {
                 for (int i = 0; i < N; i++) {
                     values[i] = std::get<int>(primitives[i]);
                 }
-            }catch (std::exception &ex) {
-                throw std::invalid_argument("Incorrect parameter type(s) for uniform"
-                                            " \"" + name + "\"; expected int(s), but found non-int(s).");
+            }catch (...) {
+                ApplicationError::UniformMismatch(name, "int(s)", "non-int(s)");
             }
             commit(values);
         }
@@ -185,36 +176,26 @@ namespace Framework {
             Uniform(name, location, type) { }
 
         void set(MatType matrix) override {
-            throw std::runtime_error("Incorrect parameter type for uniform"
-                                     " \"" + name + "\"; expected int(s), but found matrix.");
+            ApplicationError::UniformMismatch(name, "int(s)", "matrix");
         }
 
         void set(VecType vector) override {
             if (const auto v2 = std::get_if<glm::ivec2>(&vector)){
                 Size == 2 ? commit(glm::value_ptr(*v2)) :
-                throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\"; expected ivec" + std::to_string(Size) +
-                                            ", but found ivec2.");
+                ApplicationError::UniformMismatch(name, "ivec" + std::to_string(Size), "ivec2");
             } else if (const auto v3 = std::get_if<glm::ivec3>(&vector)) {
                 Size == 3 ? commit(glm::value_ptr(*v3)) :
-                throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\"; expected ivec" + std::to_string(Size) +
-                                            ", but found ivec3.");
+                ApplicationError::UniformMismatch(name, "ivec" + std::to_string(Size), "ivec3");
             } else if (const auto v4 = std::get_if<glm::ivec4>(&vector)) {
                 Size == 4 ? commit(glm::value_ptr(*v4)) :
-                throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\"; expected ivec" + std::to_string(Size) +
-                                            ", but found ivec4.");
+                ApplicationError::UniformMismatch(name, "ivec" + std::to_string(Size), "ivec4");
             } else {
-                throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\"; expected a vector of ints"
-                                            ", but found otherwise.");
+                ApplicationError::UniformMismatch(name, "a vector of ints", "otherwise");
             }
         }
 
         void set(Texture* texture) override {
-            throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\"; it is a non-texture uniform.");
+            ApplicationError::UniformMismatch(name, "non-texture", "texture");
         }
     };
 
@@ -227,7 +208,7 @@ namespace Framework {
         Size == 4
     )
     class UniformMatrixFloat : public Uniform {
-        void commit(const float* mValues) {
+        void commit(const float* mValues) const {
             switch (type) {
                 case GL_FLOAT_MAT2:
                     glUniformMatrix2fv(location, 1, GL_FALSE, mValues);
@@ -244,9 +225,7 @@ namespace Framework {
         }
 
         void process(std::vector<PrimitiveType> primitives) override {
-            throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\"; expected mat" + std::to_string(Size) +
-                                        ", but found primitive type(s).");
+            ApplicationError::UniformMismatch(name, "mat" + std::to_string(Size), "primitive type(s)");
         }
     public:
         UniformMatrixFloat(const std::string& name, const GLint location, const GLenum type) :
@@ -255,31 +234,22 @@ namespace Framework {
         void set(MatType matrix) override {
             if (const auto m2 = std::get_if<glm::mat2>(&matrix)) {
                 type == GL_FLOAT_MAT2 ? commit(glm::value_ptr(*m2)) :
-                throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\"; expected mat" + std::to_string(Size) +
-                                            ", but found mat2.");
+                ApplicationError::UniformMismatch(name, "mat" + std::to_string(Size), "mat2");
             } else if (const auto m3 = std::get_if<glm::mat3>(&matrix)) {
                 type == GL_FLOAT_MAT3 ? commit(glm::value_ptr(*m3)) :
-                throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\"; expected mat" + std::to_string(Size) +
-                                            ", but found mat3.");
+                ApplicationError::UniformMismatch(name, "mat" + std::to_string(Size), "mat3");
             } else if (const auto m4 = std::get_if<glm::mat4>(&matrix)) {
                 type == GL_FLOAT_MAT4 ? commit(glm::value_ptr(*m4)) :
-                throw std::invalid_argument("Incorrect parameter type for uniform"
-                                            " \"" + name + "\"; expected mat" + std::to_string(Size) +
-                                            ", but found mat4.");
+                ApplicationError::UniformMismatch(name, "mat" + std::to_string(Size), "mat4");
             }
         }
 
         void set(VecType vector) override {
-            throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\"; expected mat" + std::to_string(Size) +
-                                        ", but found vector.");
+            ApplicationError::UniformMismatch(name, "mat" + std::to_string(Size), "vector");
         }
 
         void set(Texture* texture) override {
-            throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\"; it is a non-texture uniform.");
+            ApplicationError::UniformMismatch(name, "mat" + std::to_string(Size), "texture");
         }
     };
 
@@ -288,24 +258,18 @@ namespace Framework {
         int textureUnit;
 
         void process(std::vector<PrimitiveType> primitives) override {
-            throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\"; expected Texture" +
-                                        ", but found primitive type(s).");
+            ApplicationError::UniformMismatch(name, "Texture", "primitive type(s)");
         }
     public:
         UniformSampler(const std::string& name, const GLint location, const GLenum type, const int textureUnit) :
             Uniform(name, location, type), textureUnit(textureUnit) { }
 
         void set(MatType matrix) override {
-            throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\"; expected Texture" +
-                                        ", but found matrix.");
+            ApplicationError::UniformMismatch(name, "Texture", "matrix");
         }
 
         void set(VecType vector) override {
-            throw std::invalid_argument("Incorrect parameter type for uniform"
-                                        " \"" + name + "\"; expected Texture" +
-                                        ", but found vector.");
+            ApplicationError::UniformMismatch(name, "Texture", "vector");
         }
 
         void set(Texture* texture) override {

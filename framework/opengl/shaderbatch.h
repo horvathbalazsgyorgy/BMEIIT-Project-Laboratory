@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include "shaderprogram.h"
 #include "loader/shaderloader.h"
+#include "../message/variants/applicationerror.h"
 
 namespace Framework {
     struct ShaderProperty {
@@ -24,9 +25,10 @@ namespace Framework {
         std::unordered_map<std::string, int> batchIndices;
     public:
         ShaderBatch(const std::vector<ShaderProperty>& properties) : nShaders(0) {
-            if (properties.empty())
-                throw std::invalid_argument("Invalid argument; expected at least one shader defining property,"
-                                            " but none were provided.");
+            if (properties.empty()) {
+                ApplicationError::MissingComponent("ShaderBatch", "at least one shader defining property");
+                return;
+            }
 
             for (const auto& [name, vcs, fs, gs] : properties) {
                 batchIndices[name] = nShaders++;
@@ -37,7 +39,7 @@ namespace Framework {
                 }else {
                     auto vertexShader   = ShaderLoader::createAndCompileShader(GL_VERTEX_SHADER,  vcs);
                     auto fragmentShader = ShaderLoader::createAndCompileShader(GL_FRAGMENT_SHADER, fs);
-                    auto geometryShader = 0;
+                    GLuint geometryShader = 0;
                     if (gs != nullptr) {
                         geometryShader = ShaderLoader::createAndCompileShader(GL_GEOMETRY_SHADER, gs);
                     }
@@ -60,6 +62,8 @@ namespace Framework {
             if (const auto it = batchIndices.find(name); it != batchIndices.end()) {
                 return batch[it->second].get();
             }
+
+            //TODO: Restructure ShaderBatch so it does not need an index operator
             throw std::invalid_argument("Invalid argument; shader program \"" + name + "\" does not exist.");
         }
     };

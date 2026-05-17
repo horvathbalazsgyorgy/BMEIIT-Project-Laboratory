@@ -1,7 +1,8 @@
 #include "shaderprogram.h"
 
-#include <stdexcept>
 #include "../uniform/uniformsource.h"
+#include "../message/variants/applicationerror.h"
+#include "../message/variants/applicationwarning.h"
 
 namespace Framework {
     void ShaderProgram::check() const {
@@ -12,7 +13,7 @@ namespace Framework {
         if (!success) {
             std::string infoLog(infoLogLength, '\0');
             glGetProgramInfoLog(program, infoLogLength, nullptr, infoLog.data());
-            throw std::runtime_error("Error in linking shaders:\n" + infoLog);
+            ApplicationError::GeneralConfigurationFailure("link", "shaders", "program ID: " + std::to_string(program), infoLog);
         }
     }
 
@@ -50,8 +51,10 @@ namespace Framework {
     }
 
     void ShaderProgram::dispatch(const glm::uvec3& groups, const GLuint barriers) const {
-        if (!compute)
-            throw std::runtime_error("Error dispatching shader; program does not consist of a compute shader.");
+        if (!compute) {
+            ApplicationWarning::DispatchFailure(program);
+            return;
+        }
 
         this->use();
         for (auto* source : sources) {

@@ -1,29 +1,36 @@
 #include "scene.h"
 
-#include <iostream>
-#include <stdexcept>
 #include "scenebuilder.h"
+#include "../message/variants/applicationerror.h"
 
 namespace Framework {
     void Scene::buildScene() const {
         if (!builder) {
-            throw std::runtime_error("Error!\n Builder in scene is not set! Can't build.");
+            ApplicationError::MissingComponent("Scene", "SceneBuilder to build");
+            return;
         }
-        builder->build();
+
+        if (GLApplication::Initialized())
+            builder->build();
     }
 
     void Scene::drawScene(float dt, const std::set<unsigned int> &keysPressed) const {
         if (!builder) {
-            throw std::runtime_error("Error!\n Builder in scene is not set! Can't draw.");
+            ApplicationError::MissingComponent("Scene", "SceneBuilder to draw");
+            return;
         }
-        builder->draw(dt, keysPressed);
+
+        if (GLApplication::Initialized())
+            builder->draw(dt, keysPressed);
     }
 
     void Scene::disposeScene() const {
         if (!builder) {
-            std::cout << "Warning!\n Builder in scene is not set! Can't dispose." << std::endl;
+            ApplicationError::MissingComponent("Scene", "SceneBuilder to dispose");
             return;
         }
-        builder->reset();
+
+        if (GLApplication::Initialized())
+            builder->reset();
     }
 }

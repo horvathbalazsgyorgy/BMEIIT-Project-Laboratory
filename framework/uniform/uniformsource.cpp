@@ -4,6 +4,7 @@
 #include <utility>
 #include "uniform.h"
 #include "../opengl/shaderprogram.h"
+#include "../message/variants/applicationerror.h"
 
 namespace Framework {
     void visit(Uniform* uniform, const Dump& var) {
@@ -32,17 +33,22 @@ namespace Framework {
     }
 
     UniformSource::UniformSource(std::string prefix, const std::vector<ShaderProgram*>& programs) : glslPrefix(std::move(prefix)) {
-        if (programs.empty())
-            throw std::invalid_argument("Invalid argument; expected at least one shader program, but none were provided.");
+        if (programs.empty()) {
+            ApplicationError::MissingComponent("UniformSource", "at least one shader program");
+            return;
+        }
         for (auto* program : programs) {
             initProvider(program);
         }
     }
 
     void UniformSource::relink(const std::vector<ShaderProgram*>& programs) {
-        if (programs.empty())
-            throw std::invalid_argument("Invalid argument; expected at least one shader program to"
-                                        " perform hot reload, but none were provided.");
+        if (programs.empty()) {
+            ApplicationError::MissingComponent("UniformSource", "at least one shader program"
+                                                        " to perform hot reload");
+            return;
+        }
+
         providers.clear();
         for (auto* program : programs) {
             initProvider(program);

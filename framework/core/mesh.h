@@ -1,8 +1,8 @@
 #ifndef PROJECTLABORATORY_MESH_H
 #define PROJECTLABORATORY_MESH_H
 
-#include <stdexcept>
 #include "material.h"
+#include "../message/variants/applicationwarning.h"
 
 namespace Framework {
     class Mesh : public UniformSource {
@@ -13,8 +13,11 @@ namespace Framework {
         Mesh(ShaderProgram* program, Material* boundMaterial, const std::string& prefix = "mesh")
             : UniformSource(prefix + '.', {program})
         {
-            if (!boundMaterial)
-                throw std::invalid_argument("Invalid argument; expected material but found none.");
+            if (!boundMaterial) {
+                ApplicationWarning::MissingValue("Mesh", "Material");
+                this->boundMaterial = new Material(program);
+                return;
+            }
             this->boundMaterial = boundMaterial;
         }
 

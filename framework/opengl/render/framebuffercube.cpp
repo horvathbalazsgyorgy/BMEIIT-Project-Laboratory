@@ -1,8 +1,8 @@
 #include "framebuffercube.h"
 
 #include <cmath>
-#include <stdexcept>
 #include "rendertexture.h"
+#include "../../message/variants/applicationwarning.h"
 
 namespace Framework {
     FramebufferCube::FramebufferCube(
@@ -26,8 +26,8 @@ namespace Framework {
         const TextureFiltering filter)
     {
         if (nMip <= 1 && filter == TRILINEAR)
-            throw std::invalid_argument("Invalid argument; expected mipmapped targets due"
-                                        " to TRILINEAR filtering, but found otherwise.");
+            ApplicationWarning::ComponentMismatch("FramebufferCube", "trilinear filtering", "no mipmap");
+
         if (complete)
             complete = false;
 
