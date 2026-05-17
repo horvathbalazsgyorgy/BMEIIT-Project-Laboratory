@@ -2,9 +2,10 @@
 
 #include <iostream>
 #include <set>
-#include <stdexcept>
 #include "../scene/scene.h"
 #include "../utility/mouse.h"
+#include "../threading/threadpool.h"
+#include "../message/variants/applicationerror.h"
 #include "glm/vec2.hpp"
 
 namespace {
@@ -54,8 +55,8 @@ namespace Framework {
         WindowSize::height = height;
         window = glfwCreateWindow(width, height, "", nullptr, nullptr);
         if (window == nullptr) {
-            glfwTerminate();
-            throw std::runtime_error("Error: failed to create GLFW window");
+            ApplicationError::GeneralConfigurationFailure("create", "GLFW window");
+            return;
         }
 
         glfwMakeContextCurrent(window);
@@ -65,34 +66,50 @@ namespace Framework {
         glfwSetCursorPosCallback(window, CallbackManager::cursor_pos_callback);
 
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-            throw std::runtime_error("Error: failed to initialize GLAD");
+            ApplicationError::GeneralConfigurationFailure("initialize", "GLAD");
+            return;
         }
+
+        unsigned int N = std::thread::hardware_concurrency();
+        ThreadPool::start(N, 50, 1000);
+        initialized = true;
     }
 
     void GLApplication::render(Scene* scene) {
-        float timeAtThisFrame  = 0.0f;
-        float timeAtLastFrame  = 0.0f;
-        float timeAtLastSecond = 0.0f;
-        int framerate = 0;
-        while (!glfwWindowShouldClose(window)) {
-            timeAtThisFrame = (float)glfwGetTime();
-            float dt = timeAtThisFrame - timeAtLastFrame;
-            timeAtLastFrame = timeAtThisFrame;
-            timeAtLastSecond += dt;
-            framerate++;
+        if (initialized) {
+            float timeAtThisFrame  = 0.0f;
+            float timeAtLastFrame  = 0.0f;
+            float timeAtLastSecond = 0.0f;
+            int framerate = 0;
 
-            if (timeAtLastSecond >= 1.0f) {
-                std::cout << "FPS: " << framerate << std::endl;
-                timeAtLastSecond = 0.0f;
-                framerate = 0;
+            while (!glfwWindowShouldClose(window) && !flag.stop_requested()) {
+                timeAtThisFrame = (float)glfwGetTime();
+                float dt = timeAtThisFrame - timeAtLastFrame;
+                timeAtLastFrame = timeAtThisFrame;
+                timeAtLastSecond += dt;
+                framerate++;
+
+                if (timeAtLastSecond >= 1.0f) {
+                    std::cout << "FPS: " << framerate << std::endl;
+                    timeAtLastSecond = 0.0f;
+                    framerate = 0;
+                }
+
+                scene->drawScene(dt, CallbackManager::keysPressed);
+                messages.dequeue();
+
+                glfwSwapBuffers(window);
+                glfwPollEvents();
             }
-
-            scene->drawScene(dt, CallbackManager::keysPressed);
-
-            glfwSwapBuffers(window);
-            glfwPollEvents();
+        }else {
+            messages.dequeue();
         }
 
+        ThreadPool::stop();
         glfwTerminate();
+    }
+
+    void GLApplication::shutdown() {
+        source.request_stop();
     }
 }
