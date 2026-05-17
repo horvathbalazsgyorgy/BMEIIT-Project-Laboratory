@@ -31,6 +31,8 @@ add_library(framework
         framework/opengl/application.cpp
         framework/opengl/shaderprogram.cpp
         framework/scene/scene.cpp
+        framework/threading/jobpool.cpp
+        framework/threading/threadpool.cpp
         framework/uniform/uniformregistry.cpp
         framework/uniform/uniformsource.cpp)
 target_include_directories(framework PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
