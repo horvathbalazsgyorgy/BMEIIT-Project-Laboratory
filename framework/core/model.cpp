@@ -1,7 +1,5 @@
 #include "model.h"
 
-#include <stdexcept>
-#include "material.h"
 #include "mesh.h"
 #include "glm/gtc/matrix_transform.hpp"
 
