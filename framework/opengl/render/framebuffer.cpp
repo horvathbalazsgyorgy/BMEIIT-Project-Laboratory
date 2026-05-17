@@ -1,8 +1,9 @@
 #include "framebuffer.h"
 
 #include <cmath>
-#include <stdexcept>
 #include "rendertexture.h"
+#include "../../message/variants/applicationerror.h"
+#include "../../message/variants/applicationwarning.h"
 
 namespace Framework {
     /**DefaultFramebuffer**/
@@ -21,8 +22,10 @@ namespace Framework {
         for (const auto buf : framebuffers) {
             glBindFramebuffer(GL_FRAMEBUFFER, buf);
             glDrawBuffers(nTarget, attachments.data());
-            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-                throw std::runtime_error("Framebuffer configuration error; expected framebuffer to be complete, but found otherwise.");
+            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+                ApplicationError::GeneralConfigurationFailure("configure", "framebuffer");
+                return;
+            }
         }
         complete = true;
     }
@@ -49,8 +52,8 @@ namespace Framework {
         const TextureFiltering filter)
     {
         if (nMip <= 1 && filter == TRILINEAR)
-            throw std::invalid_argument("Invalid argument; expected mipmapped targets due"
-                                        " to TRILINEAR filtering, but found otherwise.");
+            ApplicationWarning::ComponentMismatch("Framebuffer", "trilinear filtering", "no mipmap");
+
         if (complete)
             complete = false;
 

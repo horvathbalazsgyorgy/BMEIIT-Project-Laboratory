@@ -1,7 +1,7 @@
 #include "shaderloader.h"
 
-#include <stdexcept>
 #include <fstream>
+#include "../../message/variants/applicationerror.h"
 
 namespace Framework {
     std::string ShaderLoader::convertGLSLToString(const char* shader) {
@@ -11,7 +11,8 @@ namespace Framework {
 
         std::ifstream shaderFile(prefix);
         if (!shaderFile.is_open()) {
-            throw std::runtime_error("Unable to open shader file \"" + prefix + "\" or file not found");
+            ApplicationError::FileNotFound("shader", prefix);
+            return "";
         }
 
         std::string line;
@@ -24,8 +25,10 @@ namespace Framework {
     }
 
     GLuint ShaderLoader::createAndCompileShader(unsigned int type, const char* source) {
-        if (type == GL_TESS_CONTROL_SHADER || type == GL_TESS_EVALUATION_SHADER)
-            throw std::invalid_argument("Invalid argument; tesselation shaders are not supported at the moment.");
+        if (type == GL_TESS_CONTROL_SHADER || type == GL_TESS_EVALUATION_SHADER) {
+            ApplicationError::ComponentNotSupported("shader", "tesselation shader");
+            return 0;
+        }
 
         auto shaderID = glCreateShader(type);
         std::string shaderCode = convertGLSLToString(source);
@@ -48,8 +51,8 @@ namespace Framework {
             else if (type == GL_GEOMETRY_SHADER) { shaderType = "geometry"; }
             else if (type == GL_COMPUTE_SHADER)  { shaderType = "compute";  }
             else shaderType = "unknown";
-            throw std::runtime_error("Error compiling " + shaderType + " shader "
-                                    "(" + std::string(source) + "):\n" + infoLog);
+            ApplicationError::GeneralConfigurationFailure("compile", shaderType + " shader", std::string(source), infoLog);
+            return 0;
         }
 
         return shaderID;

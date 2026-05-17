@@ -6,7 +6,6 @@
 #include <variant>
 #include <utility>
 #include <concepts>
-#include <stdexcept>
 
 #include "../opengl/shaderprogram.h"
 #include "glm/glm.hpp"

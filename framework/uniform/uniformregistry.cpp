@@ -1,6 +1,7 @@
 #include "uniformregistry.h"
 
 #include <vector>
+#include "../message/variants/applicationerror.h"
 
 namespace {
     struct UniformFactory {
@@ -31,7 +32,8 @@ namespace {
                 return std::make_unique<Framework::UniformMatrixFloat<4>>(name, location, type);
             if (type == GL_SAMPLER_2D || type == GL_SAMPLER_CUBE || type == GL_SAMPLER_BUFFER)
                 return std::make_unique<Framework::UniformSampler>(name, location, type, samplerUnit++);
-            throw std::runtime_error("Fatal error; unsupported uniform type.");
+            Framework::ApplicationError::ComponentNotSupported("uniform", "uniform type " + std::to_string(type));
+            return nullptr;
         }
     };
 }
