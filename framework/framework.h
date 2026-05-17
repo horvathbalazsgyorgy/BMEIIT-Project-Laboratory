@@ -8,6 +8,13 @@
 #include "core/mesh.h"
 #include "core/model.h"
 
+#include "message/variants/applicationerror.h"
+#include "message/variants/applicationinfo.h"
+#include "message/variants/applicationwarning.h"
+
+#include "message/applicationmessage.h"
+#include "message/messagequeue.h"
+
 #include "opengl/loader/shaderloader.h"
 #include "opengl/loader/texture.h"
 
@@ -22,6 +29,11 @@
 
 #include "scene/scene.h"
 #include "scene/scenebuilder.h"
+
+#include "threading/job.h"
+#include "threading/jobpool.h"
+#include "threading/threadpool.h"
+#include "threading/timer.h"
 
 #include "uniform/uniform.h"
 #include "uniform/uniformregistry.h"
