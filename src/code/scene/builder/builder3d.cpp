@@ -1,6 +1,5 @@
 #include "builder3d.h"
 
-#include <iostream>
 #include "../quadmesh.h"
 #include "../../loader/assimpmodel.h"
 #include "../../hdr/hdrtexture.h"
@@ -173,9 +172,6 @@ void Builder3D::buildModels() {
     models.push_back(new Model((*defaultBatch)["background"], {backgroundMesh}));
 
     auto poses = calculatePoses(10.0f, 4);
-    for (auto pose : poses) {
-        std::cout << "X: " << pose.first.x << ", Z: " << pose.first.z << std::endl;
-    }
     hotreload = (*defaultBatch)["maxblinn"];
     models.push_back(new AssimpModel(hotreload,
         "resources/assimp/showroom/forgotten_knight/scene.gltf",
@@ -204,8 +200,6 @@ void Builder3D::buildModels() {
           glm::vec3(4.0f, 4.0f, 4.0f),
         poses[3].second,
     ALBEDO, NORMAL, AMBIENT_OCCLUSION, METALLIC_ROUGHNESS));
-
-    std::cout << std::endl;
 }
 
 void Builder3D::buildFramebuffers() {
@@ -266,7 +260,7 @@ void Builder3D::buildUniforms() {
     precompute();
     //Binding the appropriate textures for IBL
     miscellaneous.linkPrograms((*defaultBatch)["pbr"]);
-    miscellaneous.linkUniform("spherical", [this] { return &spherical; });
+    miscellaneous.linkUniform("spherical", &spherical);
     miscellaneous.linkUniform("exposure", &exposure);
     miscellaneous.linkUniform("LoD", &LoD - 1);
     miscellaneous.linkUniform("LuT", (*integratedFBO)[0]);
@@ -282,6 +276,8 @@ void Builder3D::buildUniforms() {
 void Builder3D::draw(float dt, std::set<unsigned int> keysPressed) {
     defaultFramebuffer->resize(WindowSize::width, WindowSize::height);
     postProcFramebuffer->resize(WindowSize::width, WindowSize::height);
+
+    ThreadPool::processCompletedJobs();
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);

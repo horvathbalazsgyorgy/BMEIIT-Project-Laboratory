@@ -47,10 +47,14 @@ public:
     }
 
     void build() override {
-        SceneBuilder::build();
-        buildFramebuffers();
+        reset();
+        buildPrograms();
         buildCamera();
         buildLights();
+        buildMaterials();
+        buildMeshes();
+        buildModels();
+        buildFramebuffers();
         buildUniforms();
     }
 
