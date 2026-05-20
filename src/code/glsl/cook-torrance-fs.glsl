@@ -6,25 +6,18 @@ layout (std430, binding = 1) buffer SHData{
     vec4 radiance[9];
 } SHColor;
 
-in vec4 worldPosition;
-in vec4 worldNormal;
-in vec4 worldTangent;
-in vec4 worldBitangent;
-in vec3 viewDir;
-in vec4 color;
-in vec2 tex[4];
+in vec2 tex;
 
 uniform struct{
-    sampler2D albedoMap1;
-    sampler2D normalMap1;
-    sampler2D mrMap1;
-    sampler2D aoMap1;
-
-    int albedoMap1_uv;
-    int normalMap1_uv;
-    int mrMap1_uv;
-    int aoMap1_uv;
+    sampler2D gPosition;
+    sampler2D gNormal;
+    sampler2D gAlbedo;
+    sampler2D gPBR;
 } material;
+
+uniform struct{
+    vec3 position;
+} camera;
 
 uniform struct{
     vec4 position;
@@ -170,31 +163,21 @@ vec3 shadeIBL(vec3 normal, vec3 viewDir, vec3 albedo, float roughness, float met
 }
 
 void main(void) {
-    //Stuff for normal mapping
-    vec3 N = gl_FrontFacing ? normalize(worldNormal.xyz) : -normalize(worldNormal.xyz);
-    vec3 T = normalize(worldTangent.xyz);
-    vec3 B = normalize(worldBitangent.xyz);
-    mat3 TBN = mat3(T, B, N);
+    //Extracting data from G-Buffer
+    vec3  position  = texture(material.gPosition, tex).rgb;
+    vec3  normal    = texture(material.gNormal,   tex).rgb;
+    vec3  albedo    = texture(material.gAlbedo,   tex).rgb;
+    vec3  pbr       = texture(material.gPBR,      tex).rgb;
+    float ao        = pbr.r;
+    float roughness = pbr.g;
+    float metallic  = pbr.b;
+    normal = normalize(normal);
 
-    //Normals
-    vec3 tangentNormal = texture(material.normalMap1, tex[material.normalMap1_uv]).rgb;
-    tangentNormal = normalize(tangentNormal * 2.0 - 1.0);
-    vec3 normal   = normalize(TBN * tangentNormal);
-
-    //Extracting material properties
-    vec4 materialColor = texture(material.albedoMap1, tex[material.albedoMap1_uv]);
-    if(materialColor.a < 0.1){
-        discard;
-    }
-    vec3  albedo = materialColor.rgb * color.rgb;
-    vec3  metallicRougness = texture(material.mrMap1, tex[material.mrMap1_uv]).rgb;
-    float ao = texture(material.aoMap1, tex[material.aoMap1_uv]).r;
-    float roughness = metallicRougness.g;
-    float metallic  = metallicRougness.b;
+    vec3 viewDir = normalize(camera.position - position);
 
     vec3 L0 = vec3(0.0f);
     for(int i = 0; i < 4; i++){
-        vec3  lightDiff = lights[i].position.xyz - lights[i].position.w * worldPosition.xyz;
+        vec3  lightDiff = lights[i].position.xyz - lights[i].position.w * position;
         vec3  lightDir  = normalize(lightDiff);
         float distance    = length(lightDiff) * lights[i].position.w;
         float attenuation = 1.0f / (distance * distance);

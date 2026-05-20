@@ -8,17 +8,17 @@ using namespace Framework;
 
 class Builder3D : public SceneBuilder {
     std::vector<Model*> models;
-    ShaderBatch *defaultBatch, *postProcBatch;
+    ShaderBatch *gBufferBatch, *defaultBatch, *backgroundBatch, *postProcBatch;
 
     Camera *camera;
     LightArray *pbrLights, *maxBlinnLights;
-    Mesh *backgroundMesh, *postProcMesh;
-    Material *backgroundMaterial, *postProcMaterial;
+    Mesh *backgroundMesh, *postProcMesh, *gBufferMesh;
+    Material *backgroundMaterial, *postProcMaterial, *gBufferMaterial;
     Texture *envTexture, *hdrTexture;
 
     DefaultFramebuffer* defaultFramebuffer;
     FramebufferCube* framebufferCube, *convolutedFBOCube, *prefilterFBOCube;
-    Framebuffer* integratedFBO, *postProcFramebuffer;
+    Framebuffer* integratedFBO, *postProcFramebuffer, *gBuffer;
 
     ShaderProgram* hotreload;
     MiscSource& miscellaneous = MiscSource::use();
@@ -40,7 +40,7 @@ class Builder3D : public SceneBuilder {
     void buildLights();
     void buildUniforms();
 public:
-    Builder3D() : SceneBuilder(), exposure(1.0f), LoD(5), spherical(true) { }
+    Builder3D() : SceneBuilder(), exposure(1.0f), LoD(4), spherical(true) { }
 
     void reset() override {
         models.clear();
@@ -48,14 +48,14 @@ public:
 
     void build() override {
         reset();
+        buildFramebuffers();
         buildPrograms();
-        buildCamera();
-        buildLights();
         buildMaterials();
         buildMeshes();
-        buildModels();
-        buildFramebuffers();
+        buildCamera();
+        buildLights();
         buildUniforms();
+        buildModels();
     }
 
     void draw(float dt, std::set<unsigned int> keysPressed) override;

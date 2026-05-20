@@ -13,6 +13,6 @@ const float gamma = 2.2;
 
 //Post-processing - Apply gamma correction
 void main(void) {
-    vec3 color = texture(material.rawTexture, vec2(tex.x, 1.0f - tex.y)).rgb;
+    vec3 color = texture(material.rawTexture, tex).rgb;
     fragmentColor = vec4(pow(color, vec3(1.0f/gamma)), 1.0f);
 }

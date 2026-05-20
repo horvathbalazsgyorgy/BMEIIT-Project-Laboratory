@@ -17,14 +17,12 @@ uniform struct{
 
 uniform struct{
     mat4 viewProjMatrix;
-    vec3 position;
 } camera;
 
 out vec4 worldPosition;
 out vec3 worldNormal;
 out vec3 worldTangent;
 out vec3 worldBitangent;
-out vec3 viewDir;
 out vec4 color;
 out vec2 tex[4];
 
@@ -54,7 +52,6 @@ void main(void) {
 
     gl_Position = camera.viewProjMatrix * worldPosition;
 
-    viewDir = normalize(camera.position - vec3(worldPosition.xyz));
     for(int i = 0; i < 4; i++) tex[i] = vertexTexCoords[i];
     color   = vertexColor;
 }
