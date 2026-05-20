@@ -2,7 +2,7 @@
 #define PROJECTLABORATORY_TEXTURE_H
 
 #include <string>
-#include "framework/threading/job.h"
+#include "../../threading/job.h"
 #include "glad/glad.h"
 
 namespace Framework {

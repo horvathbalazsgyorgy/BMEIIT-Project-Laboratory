@@ -1,6 +1,8 @@
 #include "texture.h"
 
+#include <filesystem>
 #include "../../message/variants/applicationerror.h"
+#include "config.h"
 #include "stb_image.h"
 
 namespace Framework {
@@ -49,7 +51,8 @@ namespace Framework {
     Texture2D::Texture2D(TextureEncoding encoding, const std::string &filePath) {
         stbi_set_flip_vertically_on_load(true);
 
-        unsigned char* data = stbi_load(filePath.c_str(), &state.width, &state.height, &state.channels, 0);
+        std::filesystem::path fullPath = std::filesystem::path(RESOURCES_PATH) / filePath;
+        unsigned char* data = stbi_load(fullPath.string().c_str(), &state.width, &state.height, &state.channels, 0);
         if (!data) {
             stbi_image_free(data);
             ApplicationError::FileNotFound("texture", filePath);
@@ -86,7 +89,9 @@ namespace Framework {
 
     void Texture2D::run() {
         stbi_set_flip_vertically_on_load(true);
-        state.pixels = stbi_load(state.path.c_str(), &state.width, &state.height, &state.channels, 0);
+
+        std::filesystem::path fullPath = std::filesystem::path(RESOURCES_PATH) / state.path;
+        state.pixels = stbi_load(fullPath.string().c_str(), &state.width, &state.height, &state.channels, 0);
 
         if (!state.pixels) {
             stbi_image_free(state.pixels);
@@ -120,7 +125,8 @@ namespace Framework {
         glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
         int width, height, channels;
         for (int i = 0; i < 6; i++) {
-            unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &channels, 0);
+            std::filesystem::path fullPath = std::filesystem::path(RESOURCES_PATH) / faces[i];
+            unsigned char* data = stbi_load(fullPath.string().c_str(), &width, &height, &channels, 0);
             if (!data) {
                 stbi_image_free(data);
                 ApplicationError::FileNotFound("cubemap texture", faces[i]);

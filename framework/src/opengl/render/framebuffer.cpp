@@ -65,8 +65,8 @@ namespace Framework {
         }
 
         for (int mip = 0; mip < nMip; mip++) {
-            unsigned int mipWidth  = width  * std::pow(0.5, mip);
-            unsigned int mipHeight = height * std::pow(0.5, mip);
+            unsigned int mipWidth  = width  >> mip;
+            unsigned int mipHeight = height >> mip;
             glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[mip]);
             glBindRenderbuffer(GL_RENDERBUFFER, depthBuffers[mip]);
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, (int)mipWidth, (int)mipHeight);
@@ -104,16 +104,17 @@ namespace Framework {
         if (!complete) {
             completeFramebuffer();
         }
-        unsigned int mipWidth  = width  * std::pow(0.5, mipLevel);
-        unsigned int mipHeight = height * std::pow(0.5, mipLevel);
+        unsigned int mipWidth  = width  >> mipLevel;
+        unsigned int mipHeight = height >> mipLevel;
 
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[mipLevel]);
         glViewport(0, 0, (int)mipWidth, (int)mipHeight);
     }
 
-    void Framebuffer::syncDepth(const int mipLevel) const {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffers[mipLevel]);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    void Framebuffer::syncDepth(const Framebuffer* other) const {
+        const GLuint target = other == nullptr ? 0 : other->framebuffers[0];
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffers[0]);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target);
         glBlitFramebuffer(
             0, 0, width, height,
             0, 0, width, height,

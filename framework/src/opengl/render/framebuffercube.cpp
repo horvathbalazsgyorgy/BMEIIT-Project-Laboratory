@@ -39,8 +39,8 @@ namespace Framework {
         }
 
         for (int mip = 0; mip < nMip; mip++) {
-            unsigned int mipWidth  = width  * std::pow(0.5, mip);
-            unsigned int mipHeight = height * std::pow(0.5, mip);
+            unsigned int mipWidth  = width  >> mip;
+            unsigned int mipHeight = height >> mip;
             glBindRenderbuffer(GL_RENDERBUFFER, depthBuffers[mip]);
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, (int)mipWidth, (int)mipHeight);
 
@@ -61,8 +61,8 @@ namespace Framework {
             completeFramebuffer();
         }
         auto mip = mipFace / 6;
-        unsigned int mipWidth  = width  * std::pow(0.5, mip);
-        unsigned int mipHeight = height * std::pow(0.5, mip);
+        unsigned int mipWidth  = width  >> mip;
+        unsigned int mipHeight = height >> mip;
 
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffers[mipFace]);
         glViewport(0, 0, (int)mipWidth, (int)mipHeight);

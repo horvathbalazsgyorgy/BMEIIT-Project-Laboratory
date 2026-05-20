@@ -1,17 +1,18 @@
 #include "shaderloader.h"
 
 #include <fstream>
+#include <filesystem>
+#include "config.h"
 #include "../../message/variants/applicationerror.h"
 
 namespace Framework {
     std::string ShaderLoader::convertGLSLToString(const char* shader) {
         std::string code;
-        std::string prefix = "glsl/";
-        prefix.append(shader);
+        std::filesystem::path shaderPath = std::filesystem::path(SHADER_PATH) / shader;
 
-        std::ifstream shaderFile(prefix);
+        std::ifstream shaderFile(shaderPath);
         if (!shaderFile.is_open()) {
-            ApplicationError::FileNotFound("shader", prefix);
+            ApplicationError::FileNotFound("shader", shaderPath.string());
             return "";
         }
 
