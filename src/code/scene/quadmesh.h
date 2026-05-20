@@ -2,7 +2,7 @@
 #define PROJECTLABORATORY_QUADMESH_H
 
 #include "glad/glad.h"
-#include "../../framework/core/mesh.h"
+#include "framework/src/core/mesh.h"
 
 using namespace Framework;
 
@@ -17,10 +17,10 @@ public:
 
     void createMesh() override {
         const float vertices[] = {
-            -1.0f, -1.0f, 0.0f,
             -1.0f,  1.0f, 0.0f,
-             1.0f, -1.0f, 0.0f,
-             1.0f,  1.0f, 0.0f
+            -1.0f, -1.0f, 0.0f,
+             1.0f,  1.0f, 0.0f,
+             1.0f, -1.0f, 0.0f
         };
 
         const float normals[] = {
