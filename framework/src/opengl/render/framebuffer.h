@@ -46,7 +46,7 @@ namespace Framework {
 
         void resize(int width, int height) override;
         void bindBuffer(int mipLevel) override;
-        void syncDepth(int mipLevel = 0) const;
+        void syncDepth(const Framebuffer* other = nullptr) const;
         RenderTexture* operator[](const int index) const {
             return targets[index].get();
         }
