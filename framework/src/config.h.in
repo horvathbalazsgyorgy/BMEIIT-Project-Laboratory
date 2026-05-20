@@ -1,0 +1,7 @@
+#pragma once
+
+/*Base directory of shader files*/
+#define SHADER_PATH "@GLSL_DIR@"
+/*Base directory of all resource files
+May have multiple subfolders*/
+#define RESOURCES_PATH "@RESOURCES_DIR@"
