@@ -105,6 +105,7 @@ public:
  * @note prone to changes, e.g. new dummies
  */
 class DummyDatabase {
+    std::unique_ptr<DummyTexture> missing;
     std::unordered_map<TextureType, std::unique_ptr<DummyTexture>> dummyTextures;
     DummyDatabase() {
         dummyTextures.emplace(ALBEDO,    std::make_unique<DummyTexture>(sRGB,      std::vector<unsigned char>{0, 0, 0}));
@@ -115,12 +116,12 @@ class DummyDatabase {
         dummyTextures.emplace(EMISSIVE,  std::make_unique<DummyTexture>(LINEAR,    std::vector<unsigned char>{0, 0, 0}));
         dummyTextures.emplace(AMBIENT_OCCLUSION,  std::make_unique<DummyTexture>(GRAYSCALE, std::vector<unsigned char>{255, 255, 255}));
         dummyTextures.emplace(METALLIC_ROUGHNESS, std::make_unique<DummyTexture>(LINEAR,    std::vector<unsigned char>{255, 128, 0}));
+        missing = std::make_unique<DummyTexture>(sRGB, std::vector<unsigned char>{230, 255, 9});
     }
     ~DummyDatabase() = default;
 public:
-    DummyTexture* operator[](TextureType type) {
-        return type == DIFFUSE ? dummyTextures[ALBEDO].get() : dummyTextures[type].get();
-    }
+    [[nodiscard]] DummyTexture* Missing() const { return missing.get(); }
+    DummyTexture* operator[](TextureType type) { return type == DIFFUSE ? dummyTextures[ALBEDO].get() : dummyTextures[type].get(); }
     static DummyDatabase& getDummyTextures() {
         static DummyDatabase dummyTextures;
         return dummyTextures;
@@ -184,7 +185,6 @@ class AssimpModel : public Model, public JobVisitor {
         std::unordered_map<std::string, std::pair<std::string, int>>& textures
     );
     void initDump() override {
-        Model::initDump();
         this->linkUniform("boneBuffer", riggingTexture);
     }
 public:

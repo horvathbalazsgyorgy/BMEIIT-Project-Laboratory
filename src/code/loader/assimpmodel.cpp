@@ -1,5 +1,6 @@
 #include "assimpmodel.h"
 
+#include <filesystem>
 #include "assimpmesh.h"
 #include "assimpmaterial.h"
 #include "assimp/Importer.hpp"
@@ -45,7 +46,8 @@ Texture* AssimpModel::makeRiggingTexture() const {
 void AssimpModel::load(const std::string& filePath) {
     Assimp::Importer importer;
     importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
-    const aiScene* scene = importer.ReadFile(filePath.c_str(),
+    std::filesystem::path fullPath = std::filesystem::path(RESOURCES_PATH) / filePath;
+    const aiScene* scene = importer.ReadFile(fullPath.string().c_str(),
         aiProcess_Triangulate
         | aiProcess_CalcTangentSpace
         | aiProcess_GenSmoothNormals
@@ -301,12 +303,16 @@ void AssimpModel::processTextureType(const TextureType type, const aiMaterial* a
         auto it = loadedTextures.find(texturePath);
         if (it == loadedTextures.end()) {
             TextureEncoding encoding = LINEAR;
-            if (type == ALBEDO || type == DIFFUSE)
+            unsigned int ID = dummyTextures[type]->ID();
+            if (type == ALBEDO || type == DIFFUSE) {
+                ID = dummyTextures.Missing()->ID();
                 encoding = sRGB;
-            if (type == ROUGHNESS || type == METALLIC || type == AMBIENT_OCCLUSION)
+            }
+            if (type == ROUGHNESS || type == METALLIC || type == AMBIENT_OCCLUSION) {
                 encoding = GRAYSCALE;
+            }
 
-            loadedTextures[texturePath] = new Texture2D(dummyTextures[type]->ID(), encoding, texturePath);
+            loadedTextures[texturePath] = new Texture2D(ID, encoding, texturePath);
             ThreadPool::enqueueJob(loadedTextures[texturePath]);
         }
         textureIncrement++;
