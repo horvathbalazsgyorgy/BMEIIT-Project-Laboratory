@@ -1,11 +1,14 @@
 #include "hdrtexture.h"
+
+#include <filesystem>
 #include "stb_image.h"
 
 HDRTexture::HDRTexture(const std::string &filePath) {
     stbi_set_flip_vertically_on_load(true);
 
     int width, height, channels;
-    float* data = stbi_loadf(filePath.c_str(), &width, &height, &channels, 0);
+    std::filesystem::path fullPath = std::filesystem::path(RESOURCES_PATH) / filePath;
+    float* data = stbi_loadf(fullPath.string().c_str(), &width, &height, &channels, 0);
     if (!data) {
         stbi_image_free(data);
         ApplicationError::FileNotFound("HDR texture", filePath);
