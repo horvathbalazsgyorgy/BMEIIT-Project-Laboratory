@@ -12,7 +12,7 @@ namespace Framework {
     };
 
     struct TextureProperties {
-        GLenum internalFormat, format, type;
+        GLenum internalFormat;
         GLint  wrap;
         TextureFiltering filter;
     };
@@ -28,14 +28,14 @@ namespace Framework {
 
     class RenderTexture2D : public RenderTexture, public Texture2D {
     public:
-        RenderTexture2D(int width, int height, const TextureProperties &properties);
+        RenderTexture2D(int width, int height, int nMipLevels, const TextureProperties &properties);
         void bindBufferTexture(GLenum attachment, int mipLevel) const override;
         void makeMipmap() override;
     };
 
     class RenderTextureCube : public RenderTexture, public TextureCube {
     public:
-        RenderTextureCube(int width, int height, const TextureProperties &properties);
+        RenderTextureCube(int width, int height, int nMipLevels, const TextureProperties &properties);
         void bindBufferTexture(GLenum attachment, int mipLevel) const override;
         void makeMipmap() override;
     };
