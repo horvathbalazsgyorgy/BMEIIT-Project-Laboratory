@@ -40,6 +40,8 @@ add_executable(ProjectLaboratory
         src/code/loader/assimpmodel.cpp
         src/code/scene/builder/builder3d.cpp
         src/code/hdr/hdrtexture.cpp
+        src/code/scene/effect/ssaomaterial.cpp
+        src/code/scene/camera/cinematic.cpp
 )
 
 target_compile_features(ProjectLaboratory PRIVATE cxx_std_20)

@@ -2,6 +2,7 @@
 
 #include "../quadmesh.h"
 #include "../gmaterial.h"
+#include "../effect/ssaomaterial.h"
 #include "../../loader/assimpmodel.h"
 #include "../../hdr/hdrtexture.h"
 #include "../../hdr/hdrcube.h"
@@ -18,6 +19,17 @@ std::vector<std::pair<glm::vec3, glm::vec3>> calculatePoses(const float radius, 
         x += limit/count;
     }
     return poses;
+}
+
+glm::vec3 calculateForward(const float pitch, const float yaw) {
+    float x = glm::radians(pitch);
+    float y = glm::radians(yaw);
+
+    glm::vec3 forward;
+    forward.x = sin(y) * cos(x);
+    forward.y = sin(x);
+    forward.z = -cos(y) * cos(x);
+    return forward;
 }
 
 void Builder3D::setupSSBO() { //NOLINT
@@ -56,11 +68,10 @@ void Builder3D::precompute() { //NOLINT
 
     //Converting the equirectangular maps to cubemaps
     {
-        framebufferCube->bindTarget(1, GL_RGBA16F, GL_RGBA, GL_FLOAT, GL_CLAMP_TO_EDGE, BILINEAR);
+        framebufferCube->bindTarget(1, GL_RGBA16F, GL_CLAMP_TO_EDGE, TRILINEAR);
         auto material = std::make_unique<Material>((*precomputeBatch)["equirectangular"]);
         auto quad     = std::make_unique<QuadMesh>((*precomputeBatch)["equirectangular"], material.get());
         auto hdrCube  = std::make_unique<HDRCube>((*precomputeBatch)["equirectangular"], quad.get(), cubeCamera.get());
-        //material->linkUniform("envTexture", envTexture);
         material->linkUniform("hdrTexture", hdrTexture);
         for (int i = 0; i < 6; i++) {
             framebufferCube->bindBuffer(i);
@@ -86,7 +97,7 @@ void Builder3D::precompute() { //NOLINT
 
     //Convoluting the previously converted cubemap
     {
-        convolutedFBOCube->bindTarget(1, GL_RGBA16F, GL_RGBA, GL_FLOAT, GL_CLAMP_TO_EDGE, BILINEAR);
+        convolutedFBOCube->bindTarget(1, GL_RGBA16F, GL_CLAMP_TO_EDGE, BILINEAR);
         auto material = std::make_unique<Material>((*precomputeBatch)["convolution"]);
         auto quad     = std::make_unique<QuadMesh>((*precomputeBatch)["convolution"], material.get());
         auto hdrCube  = std::make_unique<HDRCube>((*precomputeBatch)["convolution"], quad.get(), cubeCamera.get());
@@ -101,7 +112,7 @@ void Builder3D::precompute() { //NOLINT
     //Pre-filtering the previously converted cubemap
     {
         float roughness;
-        prefilterFBOCube->bindTarget(1, GL_RGBA16F, GL_RGBA, GL_FLOAT, GL_CLAMP_TO_EDGE, TRILINEAR);
+        prefilterFBOCube->bindTarget(1, GL_RGBA16F, GL_CLAMP_TO_EDGE, TRILINEAR);
         auto material = std::make_unique<Material>((*precomputeBatch)["prefilter"]);
         auto quad     = std::make_unique<QuadMesh>((*precomputeBatch)["prefilter"], material.get());
         auto hdrCube  = std::make_unique<HDRCube>((*precomputeBatch)["prefilter"], quad.get(), cubeCamera.get());
@@ -120,7 +131,7 @@ void Builder3D::precompute() { //NOLINT
 
     //Convoluting the BRDF and creating the LUT
     {
-        integratedFBO->bindTarget(1, GL_RG16F, GL_RG, GL_FLOAT, GL_CLAMP_TO_EDGE, BILINEAR);
+        integratedFBO->bindTarget(1, GL_RG16F, GL_CLAMP_TO_EDGE, BILINEAR);
         auto material = std::make_unique<Material>((*precomputeBatch)["brdf"]);
         auto quad     = std::make_unique<QuadMesh>((*precomputeBatch)["brdf"], material.get());
         auto model    = std::make_unique<Model>((*precomputeBatch)["brdf"], std::vector<Mesh*>{quad.get()});
@@ -140,144 +151,163 @@ void Builder3D::buildPrograms() {
     });
 
     defaultBatch = new ShaderBatch({
-        {"maxblinn",  "quad-vs.glsl", "maxblinn-fs.glsl"},      //Max-Blinn program
-        {"pbr",       "quad-vs.glsl", "cook-torrance-fs.glsl"}, //PBR program
+        {"maxblinn",  "quad-proc-vs.glsl", "maxblinn-fs.glsl"},       //Max-Blinn program
+        {"pbr",       "quad-proc-vs.glsl", "cook-torrance-fs.glsl"}, //PBR program
     });
 
     backgroundBatch = new ShaderBatch({
         {"background", "envmapped-vs.glsl", "envmapped-fs.glsl"} //Background program
     });
 
+    preProcBatch = new ShaderBatch({
+        {"ssaoNoise", "quad-proc-vs.glsl", "ssao-noise-fs.glsl"}, //SSAO Noise program
+        {"ssaoBlur",  "quad-vs.glsl", "ssao-blur-fs.glsl"}  //SSAO Blur program
+    });
+
     postProcBatch = new ShaderBatch({
-        {"postproc", "quad-vs.glsl", "postproc-fs.glsl"}, //Post-proc program
+        {"copy",         "quad-vs.glsl", "extraction-fs.glsl"},    //Idle/Copy program
+        {"downsampling", "quad-vs.glsl", "downsampling-fs.glsl"}, //Downsampling program
+        {"upsampling",   "quad-vs.glsl", "upsampling-fs.glsl"},  //Upsampling program
+        {"postproc",     "quad-vs.glsl", "postproc-fs.glsl"},   //Post-proc program
     });
 
     hotreload = (*defaultBatch)["pbr"];
+    ssaoShader = (*preProcBatch)["ssaoNoise"];
+    bloomShader = (*postProcBatch)["copy"];
 }
 
 void Builder3D::buildMeshes() {
     backgroundMesh = new QuadMesh((*backgroundBatch)["background"], backgroundMaterial);
     postProcMesh = new QuadMesh((*postProcBatch)["postproc"], postProcMaterial);
     gBufferMesh  = new QuadMesh(hotreload, gBufferMaterial);
+    ssaoMesh = new QuadMesh(ssaoShader, ssaoMaterial);
+    bloomMesh = new QuadMesh(bloomShader, bloomMaterial);
 }
 
 void Builder3D::buildMaterials() {
-    /*
-    envTexture = new TextureCube(LINEAR, {
-    "background/ldr/nowhere/posx.jpg",
-    "background/ldr/nowhere/negx.jpg",
-    "background/ldr/nowhere/posy.jpg",
-    "background/ldr/nowhere/negy.jpg",
-    "background/ldr/nowhere/posz.jpg",
-    "background/ldr/nowhere/negz.jpg"});
-    */
-
-    //envTexture = new HDRTexture("background/hdr/outdoor/shanghai_bund_8k.hdr");
-    hdrTexture = new HDRTexture("background/hdr/outdoor/shanghai_bund_8k.hdr");
+    hdrTexture = new HDRTexture("background/hdr/outdoor/mystic/blue_grotto_4k.hdr");
     backgroundMaterial = new Material((*backgroundBatch)["background"]);
     postProcMaterial = new Material((*postProcBatch)["postproc"]);
-    gBufferMaterial  = new GMaterial(hotreload, gBuffer);
+    gBufferMaterial  = new GMaterial(hotreload, gBufferFBO);
+    ssaoMaterial = new SSAOMaterial(ssaoShader, gBufferFBO, 4, 24);
+    bloomMaterial = new Material(bloomShader);
 }
 
 void Builder3D::buildModels() {
     models.push_back(new Model(hotreload, {gBufferMesh}));
+    models.push_back(new Model(ssaoShader, {ssaoMesh}));
+    models.push_back(new Model(bloomShader, {bloomMesh}));
     models.push_back(new Model((*postProcBatch)["postproc"], {postProcMesh}));
     models.push_back(new Model((*backgroundBatch)["background"], {backgroundMesh}));
 
-    auto poses = calculatePoses(10.0f, 4);
     models.push_back(new AssimpModel((*gBufferBatch)["gbuffer"],
         "assimp/showroom/forgotten_knight/scene.gltf",
-        poses[0].first,
-          glm::vec3(3.0f, 3.0f, 3.0f),
-        poses[0].second,
-        ALBEDO, NORMAL, AMBIENT_OCCLUSION, METALLIC_ROUGHNESS));
+        glm::vec3(-12.0f, 0.2f, -16.0f),
+          glm::vec3(2.85f, 2.85f, 2.85f),
+        glm::vec3(0.0f, -100.0f, 0.0f),
+        ALBEDO, NORMAL, METALLIC_ROUGHNESS, EMISSIVE));
 
     models.push_back(new AssimpModel((*gBufferBatch)["gbuffer"],
-        "assimp/showroom/sir_frog/scene.gltf",
-        poses[1].first,
+        "assimp/showroom/shadowflame_samurai/scene.gltf",
+        glm::vec3(-14.5f, 0.3f, 5.0f),
           glm::vec3(4.0f, 4.0f, 4.0f),
-        poses[1].second,
-    ALBEDO, NORMAL, AMBIENT_OCCLUSION, METALLIC_ROUGHNESS));
+          glm::vec3(0.0f, -190.0f, 0.0f),
+        ALBEDO, NORMAL, METALLIC_ROUGHNESS, EMISSIVE));
 
     models.push_back(new AssimpModel((*gBufferBatch)["gbuffer"],
-        "assimp/showroom/silksong_hornet/scene.gltf",
-        poses[2].first,
-          glm::vec3(5.0f, 5.0f, 5.0f),
-        poses[2].second,
-    ALBEDO, NORMAL, AMBIENT_OCCLUSION, METALLIC_ROUGHNESS));
+        "assimp/showroom/stelae_knight/scene.gltf",
+        glm::vec3(-2.0f, 11.505f, -8.0f),
+          glm::vec3(1.7f, 1.7f, 1.7f),
+          glm::vec3(0.0f, -10.0f, 0.0f),
+        ALBEDO, NORMAL, METALLIC_ROUGHNESS, EMISSIVE));
 
     models.push_back(new AssimpModel((*gBufferBatch)["gbuffer"],
-        "assimp/showroom/the_phantom_rogue/scene.gltf",
-        glm::vec3(poses[3].first.x, 10.0f, poses[3].first.z),
-          glm::vec3(4.0f, 4.0f, 4.0f),
-        poses[3].second,
-    ALBEDO, NORMAL, AMBIENT_OCCLUSION, METALLIC_ROUGHNESS));
+    "assimp/showroom/medieval_arcade/scene.gltf",
+    glm::vec3(0.0f),
+      glm::vec3(5.0f),
+    glm::vec3(0.0f, -100.0f, 0.0f),
+        ALBEDO, NORMAL, METALLIC_ROUGHNESS, EMISSIVE));
 }
 
 void Builder3D::buildFramebuffers() {
     defaultFramebuffer  = new DefaultFramebuffer();
-    framebufferCube     = new FramebufferCube(1024, 1024, 1);
+    framebufferCube     = new FramebufferCube(1024, 1024, (int)LoD + 1);
     convolutedFBOCube   = new FramebufferCube(64, 64, 1);
     prefilterFBOCube    = new FramebufferCube(128, 128, (int)LoD + 1);
     integratedFBO       = new Framebuffer(512, 512, 1);
-    postProcFramebuffer = new Framebuffer(WindowSize::width, WindowSize::height, 1);
-    postProcFramebuffer->bindTarget(1, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, GL_CLAMP_TO_EDGE, POINT);
 
-    /**
-     * G-BUFFER
-     **/
-    gBuffer = new Framebuffer(WindowSize::width, WindowSize::height, 1);
-    /**
-     * 1. Position
-     * 2. Normal
-     * 3. Albedo
-     * 4. Ambient Occlusion, Roughness, Metallic
-     **/
-    gBuffer->bindTarget(4, GL_RGBA32F, GL_RGBA, GL_FLOAT, GL_CLAMP_TO_EDGE, POINT);
+    postProcFBO = new Framebuffer(WindowSize::width, WindowSize::height, 1);
+    /*Scene*/
+    postProcFBO->bindTarget(1, GL_R11F_G11F_B10F, GL_CLAMP_TO_EDGE, POINT);
+
+    gBufferFBO = new Framebuffer(WindowSize::width, WindowSize::height, 1);
+    /*Depth and Surface Normal*/
+    gBufferFBO->bindTarget(1, GL_RGBA16F, GL_CLAMP_TO_EDGE, POINT);
+    /*Albedo*/
+    gBufferFBO->bindTarget(1, GL_RGBA8, GL_CLAMP_TO_EDGE, POINT);
+    /*PBR Metallic and Roughness*/
+    gBufferFBO->bindTarget(1, GL_RG8, GL_CLAMP_TO_EDGE, POINT);
+    /*Emission*/
+    gBufferFBO->bindTarget(1, GL_R11F_G11F_B10F, GL_CLAMP_TO_EDGE, POINT);
+
+    ssaoFBO = new Framebuffer(WindowSize::width, WindowSize::height, 1);
+    /*SSAO Noise and Blur*/
+    ssaoFBO->bindTarget(2, GL_R8, GL_REPEAT, POINT);
+
+    bloomFBO = new Framebuffer(WindowSize::width, WindowSize::height, bloomMip);
+    bloomFBO->bindTarget(1, GL_R11F_G11F_B10F, GL_CLAMP_TO_EDGE, TRILINEAR);
 }
 
 void Builder3D::buildCamera() {
-    camera = new Camera(
+    camera = new CinematicCamera(
         {(*gBufferBatch)["gbuffer"],
                     (*defaultBatch)["maxblinn"],
                     (*defaultBatch)["pbr"],
-                    (*backgroundBatch)["background"]},
-        glm::vec3(-11.0f, 4.5f, -16.5f),
-        -0.5f, 57.0f
+                    (*preProcBatch)["ssaoNoise"],
+                    (*backgroundBatch)["background"],
+                    (*postProcBatch)["postproc"]},
+        glm::vec3(3.25f, 12.5f, 13.8f),
+        8.0f, -120.0f,
+        8.0f, 2.75f
     );
-    camera->setSpeed(5.0f);
+    camera->Speed() = 4.0f;
+    camera->linkUniform("invView",       &camera->InvView());
+    camera->linkUniform("invProjection", &camera->InvProjection());
+    camera->linkUniform("farPlane",      &camera->FarPlane());
+
+    camera->addSequence(glm::vec3(-25.0f, 5.0f,   4.5f),  calculateForward(0.0f, 10.0f),   glm::vec2(  0.0f,  10.0f));
+    camera->addSequence(glm::vec3(-26.0f, 18.0f,-17.5f),  calculateForward(-3.0f, 100.0f),  glm::vec2( -3.0f,  10.0f));
+    camera->addSequence(glm::vec3(  9.5f, 20.0f, 19.0f),  calculateForward(0.0f, 10.0f),  glm::vec2(-30.0f, 190.0f));
+    camera->addSequence(glm::vec3( 14.0f, 22.5f, -14.5f),  calculateForward(-31.5f, 235.0f),glm::vec2( -31.5f,145.0f));
+    camera->addSequence(glm::vec3(-25.0f, 4.0f, 11.0f),  calculateForward(0.0f, 100.0f),glm::vec2( 25.0f,-80.0f));
+    camera->addSequence(glm::vec3(-9.5f, 7.0f,  7.45f), calculateForward(0.0f, 10.0f),  glm::vec2(  -5.0f,190.0f));
 }
 
 void Builder3D::buildLights() {
-    maxBlinnLights = new LightArray(4, {(*defaultBatch)["maxblinn"]});
-    (*maxBlinnLights)[0].setPosition(glm::vec4(-15.0f, 25.0f, -15.0f, 1.0f));
-    (*maxBlinnLights)[0].setEmittance(glm::vec3(200.0f, 190.0f, 160.0f));
-    (*maxBlinnLights)[0].setAmbient(glm::vec3(0.1f, 0.095f, 0.08f));
+    for (int i = 0; i < 2; i++) {
+        lights.push_back(new FlickeringLight(
+            {(*defaultBatch)["pbr"], (*defaultBatch)["maxblinn"]},
+             glm::vec3(65.08125f, 18.09825f, 1.206f),
+            glm::vec3(111.25f, 30.9375f, 2.0625f),
+            glm::vec2(0.25f, 0.55f),
+            "lights[" + std::to_string(i) + "]"));
+    }
 
-    (*maxBlinnLights)[1].setPosition(glm::vec4(-5.0f, 15.0f, -5.0f, 1.0f));
-    (*maxBlinnLights)[1].setEmittance(glm::vec3(100.0f, 95.0f, 80.0f));
-    (*maxBlinnLights)[1].setAmbient(glm::vec3(0.05f, 0.047f, 0.04f));
+    for (int i = 2; i < 6; i++) {
+        lights.push_back(new FlickeringLight(
+            {(*defaultBatch)["pbr"], (*defaultBatch)["maxblinn"]},
+             glm::vec3(4.9875f, 2.73f, 0.02625f),
+            glm::vec3(14.25f, 7.8f, 0.075f),
+            glm::vec2(0.05f, 0.25f),
+            "lights[" + std::to_string(i) + "]"));
+    }
 
-    (*maxBlinnLights)[2].setPosition(glm::vec4(5.0f, 15.0f, 5.0f, 1.0f));
-    (*maxBlinnLights)[2].setEmittance(glm::vec3(100.0f, 95.0f, 80.0f));
-    (*maxBlinnLights)[2].setAmbient(glm::vec3(0.05f, 0.047f, 0.04f));
-
-    (*maxBlinnLights)[3].setPosition(glm::vec4(15.0f, 25.0f, 15.0f, 1.0f));
-    (*maxBlinnLights)[3].setEmittance(glm::vec3(200.0f, 190.0f, 160.0f));
-    (*maxBlinnLights)[3].setAmbient(glm::vec3(0.1f, 0.095f, 0.08f));
-
-    pbrLights = new LightArray(4, {(*defaultBatch)["pbr"]});
-    (*pbrLights)[0].setPosition(glm::vec4(-15.0f, 25.0f, -15.0f, 1.0f));
-    (*pbrLights)[0].setEmittance(glm::vec3(750.0f, 712.0f, 600.0f));
-
-    (*pbrLights)[1].setPosition(glm::vec4(-5.0f, 15.0f, -5.0f, 1.0f));
-    (*pbrLights)[1].setEmittance(glm::vec3(500.0f, 475.0f, 400.0f));
-
-    (*pbrLights)[2].setPosition(glm::vec4(5.0f, 15.0f, 5.0f, 1.0f));
-    (*pbrLights)[2].setEmittance(glm::vec3(500.0f, 475.0f, 400.0f));
-
-    (*pbrLights)[3].setPosition(glm::vec4(15.0f, 25.0f, 15.0f, 1.0f));
-    (*pbrLights)[3].setEmittance(glm::vec3(750.0f, 712.0f, 600.0f));
+    lights[0]->Position() = glm::vec4(-16.13f, 7.45f, -6.25f, 1.0f);
+    lights[1]->Position() = glm::vec4(-6.04f, 7.45f, -21.65f, 1.0f);
+    lights[2]->Position() = glm::vec4(-1.52f, 25.05f, -12.45f, 1.0f);
+    lights[3]->Position() = glm::vec4(-2.3f, 25.05f, -8.05f, 1.0f);
+    lights[4]->Position() = glm::vec4(-0.5f, 23.95f, -9.98f, 1.0f);
+    lights[5]->Position() = glm::vec4(-3.38f, 24.15f, -10.5f, 1.0f);
 }
 
 void Builder3D::buildUniforms() {
@@ -285,35 +315,44 @@ void Builder3D::buildUniforms() {
     precompute();
     //Binding the appropriate textures for IBL
     miscellaneous.linkPrograms((*defaultBatch)["pbr"]);
+    miscellaneous.linkUniform("PBRold", &pbrOld);
     miscellaneous.linkUniform("spherical", &spherical);
+    miscellaneous.linkUniform("ambient", &ambient);
     miscellaneous.linkUniform("exposure", &exposure);
     miscellaneous.linkUniform("LoD", &LoD);
     miscellaneous.linkUniform("LuT", (*integratedFBO)[0]);
     miscellaneous.linkUniform("irradianceMap", (*convolutedFBOCube)[0]);
     miscellaneous.linkUniform("prefilterMap", (*prefilterFBOCube)[0]);
+    miscellaneous.linkUniform("SSAO", [this] { return (*ssaoFBO)[1]; });
 
-    backgroundMaterial->linkUniform("exposure", &exposure);
+    miscellaneous.linkPrograms((*defaultBatch)["maxblinn"]);
+    miscellaneous.linkUniform("SSAO", [this] { return (*ssaoFBO)[1]; });
+    miscellaneous.linkUniform("ambient", &ambient);
+
+    miscellaneous.linkPrograms((*preProcBatch)["ssaoNoise"]);
+    miscellaneous.linkUniform("windowWidth",  &WindowSize::width);
+    miscellaneous.linkUniform("windowHeight", &WindowSize::height);
+
+    miscellaneous.linkPrograms((*preProcBatch)["ssaoBlur"]);
+    miscellaneous.linkUniform("ssaoNoise", [this] { return (*ssaoFBO)[0]; });
+
+    miscellaneous.linkPrograms((*postProcBatch)["copy"]);
+    miscellaneous.linkUniform("scene", [this] { return (*postProcFBO)[0]; });
+
+    miscellaneous.linkPrograms((*postProcBatch)["downsampling"], (*postProcBatch)["upsampling"]);
+    miscellaneous.linkUniform("srcTexture", [this] { return (*bloomFBO)[0]; });
+    miscellaneous.linkUniform("mipLevel", &bloomMipLevel);
+
     backgroundMaterial->linkUniform("envTexture", (*framebufferCube)[0]);
 
-    postProcMaterial->linkUniform("rawTexture", [this] { return (*postProcFramebuffer)[0]; });
+    postProcMaterial->linkUniform("bloom", &bloom);
+    postProcMaterial->linkUniform("exposure", &exposure);
+    postProcMaterial->linkUniform("rawTexture",  [this] { return (*postProcFBO)[0]; });
+    postProcMaterial->linkUniform("bloomTexture",[this] { return (*bloomFBO)[0]; });
 }
 
-void Builder3D::draw(float dt, std::set<unsigned int> keysPressed) {
-    defaultFramebuffer->resize(WindowSize::width, WindowSize::height);
-    postProcFramebuffer->resize(WindowSize::width, WindowSize::height);
-    gBuffer->resize(WindowSize::width, WindowSize::height);
-
-    ThreadPool::processCompletedJobs();
-
-    glDepthFunc(GL_LESS);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-    glClearDepth(1.0f);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    if (keysPressed.contains('c') && timeSinceLastHotreload >= 1.0f) {
+void Builder3D::handleInput(const std::set<unsigned int>& keysPressed) {
+    if (keysPressed.contains('m') && timeSinceLastHotreload >= 1.0f) {
         auto newReload = hotreload == (*defaultBatch)["maxblinn"] ? (*defaultBatch)["pbr"] : (*defaultBatch)["maxblinn"];
         hotreload->unsubscribe(models[0]);
         models[0]->relink({newReload});
@@ -321,45 +360,152 @@ void Builder3D::draw(float dt, std::set<unsigned int> keysPressed) {
         timeSinceLastHotreload = 0.0f;
     }
 
+    if (keysPressed.contains('c') && timeSinceLastCinematic >= 1.0f) {
+        camera->changeState();
+        timeSinceLastCinematic = 0.0f;
+    }
+
     if (keysPressed.contains('i') && timeSinceLastIrradianceChange >= 1.0f) {
         spherical = !spherical;
         timeSinceLastIrradianceChange = 0.0f;
     }
 
+    if (keysPressed.contains('o') && timeSinceLastSSAOSwitch >= 1.0f) {
+        ambient = !ambient;
+        timeSinceLastSSAOSwitch = 0.0f;
+    }
+
+    if (keysPressed.contains('p') && timeSinceLastPBRSwitch >= 1.0f) {
+        pbrOld = !pbrOld;
+        timeSinceLastPBRSwitch = 0.0f;
+    }
+
+    if (keysPressed.contains('b') && timeSinceLastBloom >= 1.0f) {
+        bloom = !bloom;
+        timeSinceLastBloom = 0.0f;
+    }
+}
+
+void Builder3D::draw(float dt, const std::set<unsigned int>& keysPressed) {
+    defaultFramebuffer->resize(WindowSize::width, WindowSize::height);
+    postProcFBO->resize(WindowSize::width, WindowSize::height);
+    gBufferFBO->resize(WindowSize::width, WindowSize::height);
+    ssaoFBO->resize(WindowSize::width, WindowSize::height);
+    bloomFBO->resize(WindowSize::width, WindowSize::height);
+
+    ThreadPool::processCompletedJobs();
+
+    glDisable(GL_BLEND);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+    glClearDepth(1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    handleInput(keysPressed);
+
     camera->move(dt, keysPressed);
+    for (auto light : lights) {
+        light->update(dt);
+    }
 
     /* ===================================================== *
      * GEOMETRY PASS
      * ===================================================== */
-    gBuffer->bindBuffer(0);
+    gBufferFBO->bindBuffer(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
     gBufferBatch->executeAll();
+
+    /* ===================================================== *
+     * PRE-PROCESS PASS
+     * ===================================================== */
+    glDisable(GL_DEPTH_TEST);
+    ssaoFBO->bindBuffer(0);
+
+    /* ---------------- SSAO NOISE ---------------- */
+    ssaoFBO->lockTarget(0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ssaoShader->unsubscribe(models[1]);
+    ssaoShader = (*preProcBatch)["ssaoNoise"];
+    models[1]->relink({ssaoShader});
+    preProcBatch->executeOne("ssaoNoise");
+
+    /* ---------------- SSAO BLUR ---------------- */
+    ssaoFBO->lockTarget(1);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ssaoShader->unsubscribe(models[1]);
+    ssaoShader = (*preProcBatch)["ssaoBlur"];
+    models[1]->relink({ssaoShader});
+    preProcBatch->executeOne("ssaoBlur");
 
     /* ===================================================== *
      * LIGHTING PASS
      * ===================================================== */
-    postProcFramebuffer->bindBuffer(0);
+    postProcFBO->bindBuffer(0);
     glClear(GL_COLOR_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    gBuffer->syncDepth(postProcFramebuffer);
-    postProcFramebuffer->bindBuffer(0);
+    gBufferFBO->syncDepth(postProcFBO);
+    postProcFBO->bindBuffer(0);
     defaultBatch->executeAll();
+
+    /* ---------------- BACKGROUND ---------------- */
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     backgroundBatch->executeAll();
+
+    /* ===================================================== *
+     * BLOOM PASS
+     * ===================================================== */
+    bloomFBO->bindBuffer(0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+    bloomShader->unsubscribe(models[2]);
+    bloomShader = (*postProcBatch)["copy"];
+    models[2]->relink({bloomShader});
+    postProcBatch->executeOne("copy");
+
+    /* ---------------- DOWNSAMPLING ---------------- */
+    bloomShader->unsubscribe(models[2]);
+    bloomShader = (*postProcBatch)["downsampling"];
+    models[2]->relink({bloomShader});
+
+    for (int mip = 1; mip < bloomMip; mip++) {
+        bloomMipLevel = mip - 1;
+        bloomFBO->bindBuffer(mip);
+        glClear(GL_COLOR_BUFFER_BIT);
+        postProcBatch->executeOne("downsampling");
+    }
+
+    /* ---------------- UPSAMPLING ---------------- */
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+
+    bloomShader->unsubscribe(models[2]);
+    bloomShader = (*postProcBatch)["upsampling"];
+    models[2]->relink({bloomShader});
+
+    {
+        for (int mip = bloomMip - 2; mip >= 0; mip--) {
+            bloomMipLevel = mip + 1;
+            bloomFBO->bindBuffer(mip);
+            postProcBatch->executeOne("upsampling");
+        }
+    }
 
     /* ===================================================== *
      * POST-PROCESS PASS
      * ===================================================== */
     defaultFramebuffer->bindBuffer(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
-    postProcBatch->executeAll();
+    postProcBatch->executeOne("postproc");
 
+    /*Increase timers*/
     timeSinceLastHotreload += dt;
+    timeSinceLastCinematic += dt;
     timeSinceLastIrradianceChange += dt;
+    timeSinceLastSSAOSwitch += dt;
+    timeSinceLastPBRSwitch += dt;
+    timeSinceLastBloom += dt;
 }
