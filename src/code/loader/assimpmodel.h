@@ -113,7 +113,7 @@ class DummyDatabase {
         dummyTextures.emplace(NORMAL,    std::make_unique<DummyTexture>(LINEAR,    std::vector<unsigned char>{128, 128, 255}));
         dummyTextures.emplace(ROUGHNESS, std::make_unique<DummyTexture>(GRAYSCALE, std::vector<unsigned char>{128, 128, 128}));
         dummyTextures.emplace(METALLIC,  std::make_unique<DummyTexture>(GRAYSCALE, std::vector<unsigned char>{0, 0, 0}));
-        dummyTextures.emplace(EMISSIVE,  std::make_unique<DummyTexture>(LINEAR,    std::vector<unsigned char>{0, 0, 0}));
+        dummyTextures.emplace(EMISSIVE,  std::make_unique<DummyTexture>(sRGB,      std::vector<unsigned char>{0, 0, 0}));
         dummyTextures.emplace(AMBIENT_OCCLUSION,  std::make_unique<DummyTexture>(GRAYSCALE, std::vector<unsigned char>{255, 255, 255}));
         dummyTextures.emplace(METALLIC_ROUGHNESS, std::make_unique<DummyTexture>(LINEAR,    std::vector<unsigned char>{255, 128, 0}));
         missing = std::make_unique<DummyTexture>(sRGB, std::vector<unsigned char>{230, 255, 9});
@@ -171,7 +171,11 @@ class AssimpModel : public Model, public JobVisitor {
     AssimpJobState state;
 
     //Functions for generating/querying materials and textures
-    Material*  makeMaterial(ShaderProgram* program, const std::unordered_map<std::string, std::pair<std::string, int>>& textures);
+    Material*  makeMaterial(
+        ShaderProgram* program,
+        const glm::vec3& emission,
+        const std::unordered_map<std::string, std::pair<std::string, int>>& textures
+    );
     [[nodiscard]] Texture* makeRiggingTexture() const;
 
     //Processing functions

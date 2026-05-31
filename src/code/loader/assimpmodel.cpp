@@ -17,14 +17,14 @@ glm::mat4 aiMatrix4x4ToGlm4x4(const aiMatrix4x4& aiMatrix) {
     );
 }
 
-Material *AssimpModel::makeMaterial(ShaderProgram* program, const std::unordered_map<std::string, std::pair<std::string, int>>& textures) {
+Material *AssimpModel::makeMaterial(ShaderProgram* program, const glm::vec3& emission, const std::unordered_map<std::string, std::pair<std::string, int>>& textures) {
     for (auto material : materials) {
         if (material->compare(textures)) {
             return material;
         }
     }
 
-    auto material = new AssimpMaterial(program);
+    auto material = new AssimpMaterial(program, emission);
     for (const auto& [name, data] : textures) {
         auto path = data.first;
         int channel = data.second;
@@ -260,7 +260,18 @@ AssimpMesh* AssimpModel::processMesh(AssimpBuildContext& buildContext) {
         );
     }
 
-    auto material = makeMaterial(context.program, currentTextures);
+    auto  emissiveColor  = aiColor3D(0.0f, 0.0f, 0.0f);
+    auto  emissionFactor = glm::vec3(0.0f, 0.0f, 0.0f);
+    float emissionStrength = 1.0f;
+    if (assimpMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor) == aiReturn_SUCCESS) {
+        emissionFactor.r = emissiveColor.r;
+        emissionFactor.g = emissiveColor.g;
+        emissionFactor.b = emissiveColor.b;
+    }
+    assimpMaterial->Get(AI_MATKEY_EMISSIVE_INTENSITY, emissionStrength);
+    emissionFactor *= emissionStrength;
+
+    auto material = makeMaterial(context.program, emissionFactor, currentTextures);
     return new AssimpMesh(context.program, vertices, indices, material);
 }
 
@@ -304,9 +315,11 @@ void AssimpModel::processTextureType(const TextureType type, const aiMaterial* a
         if (it == loadedTextures.end()) {
             TextureEncoding encoding = LINEAR;
             unsigned int ID = dummyTextures[type]->ID();
-            if (type == ALBEDO || type == DIFFUSE) {
-                ID = dummyTextures.Missing()->ID();
+            if (type == ALBEDO || type == DIFFUSE || type == EMISSIVE) {
                 encoding = sRGB;
+                if (type != EMISSIVE) {
+                    ID = dummyTextures.Missing()->ID();
+                }
             }
             if (type == ROUGHNESS || type == METALLIC || type == AMBIENT_OCCLUSION) {
                 encoding = GRAYSCALE;

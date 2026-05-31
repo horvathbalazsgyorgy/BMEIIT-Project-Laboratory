@@ -20,14 +20,17 @@ struct TextureData {
 
 class AssimpMaterial : public Material {
     std::unordered_map<std::string, TextureData> textures;
+    glm::vec3 emissiveFactor;
 public:
-    AssimpMaterial(ShaderProgram* program, const std::string& prefix = "material") : Material(program, prefix) { }
+    AssimpMaterial(ShaderProgram* program, const glm::vec3& emissiveFactor, const std::string& prefix = "material")
+        : Material(program, prefix), emissiveFactor(emissiveFactor) { }
 
     void initDump() override {
         for (auto& [name, data] : textures) {
             this->linkUniform(name, data.texture);
             this->linkUniform(name + "_uv", &data.channel);
         }
+        this->linkUniform("emissiveFactor", &emissiveFactor);
     }
 
     void addTexture(const std::string& name, const std::string& path, int channel, Texture* texture) {
