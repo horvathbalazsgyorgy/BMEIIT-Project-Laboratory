@@ -5,7 +5,8 @@
 
 namespace Framework {
     void Camera::initDump() {
-        this->linkUniform("viewProjMatrix", &viewProjection);
+        this->linkUniform("view", &view);
+        this->linkUniform("projection", &projection);
         this->linkUniform("rayDirMatrix", &rayDir);
         this->linkUniform("position", &position);
     }
@@ -21,9 +22,12 @@ namespace Framework {
     }
 
     void Camera::configureTransformation() {
-        glm::mat4 view = glm::lookAt(position, position + ahead, vup);
-        glm::mat4 projection = glm::perspective(fov, aspect, nearPlane, farPlane);
-        viewProjection = projection * view;
+        view          = glm::lookAt(position, position + ahead, vup);
+        projection    = glm::perspective(fov, aspect, nearPlane, farPlane);
+        invView       = glm::inverse(view);
+        invProjection = glm::inverse(projection);
+
+        glm::mat4 viewProjection = projection * view;
         rayDir = inverse(translate(viewProjection, position));
     }
 

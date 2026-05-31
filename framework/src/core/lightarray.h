@@ -10,8 +10,10 @@ namespace Framework {
     class ShaderProgram;
 
     class LightArray {
+    protected:
         std::vector<std::unique_ptr<Light>> lights;
     public:
+        LightArray() = default;
         LightArray(const int size, const std::vector<ShaderProgram*>& programs, const std::string& prefix = "lights") {
             lights.reserve(size);
             for (int i = 0; i < size; ++i) {

@@ -25,8 +25,11 @@ namespace Framework {
               nearPlane = 0.1f,
               farPlane  = 1000.0f;
 
-        glm::mat4 viewProjection = glm::mat4(1.0f),
-                  rayDir         = glm::mat4(1.0f);
+        glm::mat4 view              = glm::mat4(1.0f),
+                  projection        = glm::mat4(1.0f),
+                  invView           = glm::mat4(1.0f),
+                  invProjection     = glm::mat4(1.0f),
+                  rayDir            = glm::mat4(1.0f);
 
         glm::vec3 ahead = glm::vec3(0.0f, 0.0f, -1.0f),
                   right = glm::vec3(1.0f, 0.0f, 0.0f),
@@ -48,18 +51,27 @@ namespace Framework {
             update();
         }
 
-        void setPosition(const glm::vec3 pos) { this->position = pos; }
-        void setRotation(const float p, const float y) { pitch = p; yaw = y; }
-        void setFov(const float f) { fov = glm::radians(f); }
-        void setAspectRatio(const float aspectRatio) { this->aspect = aspectRatio; }
-        void setPlanes(const float n, const float f) { nearPlane = n; farPlane = f; }
-        void setSpeed(const float s) { speed = s; }
-        void setSensitivity(const float sens) { sensitivity = sens; }
+        glm::vec3& Position() { return position; }
+        float& Pitch() { return pitch; }
+        float& Yaw() { return yaw; }
+        float& Speed() { return speed; }
+        float& Sensitivity() { return sensitivity; }
+
+        float& Fov() { return fov; }
+        float& Aspect() { return aspect; }
+        float& NearPlane() { return nearPlane; }
+        float& FarPlane() { return farPlane; }
+
+        glm::mat4& View() { return view; }
+        glm::mat4& Projection() { return projection; }
+        glm::mat4& InvView() { return invView; }
+        glm::mat4& InvProjection() { return invProjection; }
+        glm::mat4& RayDir() { return rayDir; }
 
         void update();
         void configureTransformation();
         void configureCoordinateSystem(const glm::vec3& worldUp = glm::vec3(0.0f, 1.0f, 0.0f));
-        void move(float dt, const std::set<unsigned int> &keysPressed);
+        virtual void move(float dt, const std::set<unsigned int> &keysPressed);
         void relink(const std::vector<ShaderProgram *> &programs) override;
 
         ~Camera() override = default;
