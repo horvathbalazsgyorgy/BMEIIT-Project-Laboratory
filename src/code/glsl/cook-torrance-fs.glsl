@@ -6,32 +6,40 @@ layout (std430, binding = 1) buffer SHData{
     vec4 radiance[9];
 } SHColor;
 
+in vec4 viewPosition;
 in vec2 tex;
 
 uniform struct{
-    sampler2D gPosition;
     sampler2D gNormal;
     sampler2D gAlbedo;
     sampler2D gPBR;
+    sampler2D gEmissive;
 } material;
 
-uniform struct{
+uniform struct {
+    mat4 view;
+    mat4 projection;
+    mat4 invView;
+    mat4 invProjection;
     vec3 position;
 } camera;
 
 uniform struct{
     vec4 position;
     vec3 emittance;
-} lights[4];
+} lights[6];
 
+uniform int   PBRold;
 uniform int   spherical;
 uniform float exposure;
 uniform float LoD;
 uniform sampler2D LuT;
 uniform samplerCube irradianceMap;
 uniform samplerCube prefilterMap;
+uniform sampler2D SSAO;
+uniform int ambient;
 
-out vec4 fragmentColor;
+layout (location = 0) out vec3 fragmentColor;
 const float PI = 3.14159265359;
 
 struct SHBase{
@@ -52,37 +60,47 @@ SHBase GetBase(vec3 dir){
     return base;
 }
 
-//Courtesy of Krzysztof Narkowicz
-//https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
-vec3 ACEScurve(vec3 x){
-    float a = 2.51f;
-    float b = 0.03f;
-    float c = 2.43f;
-    float d = 0.59f;
-    float e = 0.14f;
-    return clamp(vec3((x * (a*x+b)) / (x * (c*x+d) + e)), 0.0, 1.0);
+//Normal Distribution function - Using the Beckmann approximation
+float Distribution_Beckmann(float roughness, float cost){
+    float a     = max(roughness * roughness, 1e-3);
+    float a2    = a * a;
+    float cos0  = max(cost * cost, 1e-3);
+    float cos00 = cos0 * cos0;
+    float exponent = 1.0f/a2 * (1.0f - 1.0f/cos0);
+    float nom   = 1.0f/PI * 1.0f/a2 * 1.0f/cos00;
+
+    return nom * exp(exponent);
 }
 
 //Normal Distribution function - Using the Trowbridge-Reitz GGX
-float Distribution(float roughness, float cost){
-    float a     = pow(roughness, 2.0);
-    float a2    = pow(a, 2.0);
-    float cos0  = pow(cost, 2.0);
-    float denom = PI * pow(cos0 * (a2 - 1.0f) + 1.0f, 2.0);
+float Distribution_Trowbridge_Reitz_GGX(float roughness, float cost){
+    float a     = max(roughness * roughness, 1e-3);
+    float a2    = a * a;
+    float cos0  = max(cost * cost, 1e-3);
+    float term  = cos0 * (a2 - 1.0f) + 1.0f;
+    float denom = PI * (term * term);
 
     return a2 / denom;
 }
 
+//Geometry function - Using the Kelemen-Szirmay approximation
+float Geometry_Kelemen(float cosa, float cosb, float cost){
+    float cos0 = max(cost * cost, 1e-3);
+    float invCos0 = 1.0f / cos0;
+
+    return cosa * cosb * invCos0;
+}
+
 //Geometry function - Using the Schlick-GGX approximation
-float Geometry(float k, float cosa, float cosb){
-    float vGGX = cosb / (cosb * (1.0f - k) + k);
-    float lGGX = cosa / (cosa * (1.0f - k) + k);
+float Geometry_Schlick_GGX(float k, float cosa, float cosb){
+    float vGGX = cosb / max(cosb * (1.0f - k) + k, 1e-3);
+    float lGGX = cosa / max(cosa * (1.0f - k) + k, 1e-3);
 
     return vGGX * lGGX;
 }
 
 //Fresnel function - Using the Fresnek-Schlick approximation
-vec3 Fresnel(vec3 F0, float cost){
+vec3 Fresnel_Schlick(vec3 F0, float cost){
     return F0 + (1.0f - F0) * pow(clamp(1.0f - cost, 0.0f, 1.0f), 5.0);
 }
 
@@ -93,7 +111,7 @@ vec3 FresnelRoughness(vec3 F0, float cost, float roughness){
 
 vec3 CookTorranceBRDF(float ND, float G, vec3 F, float cosa, float cosb){
     vec3   DGF   = ND * G * F;
-    float  denom = 4.0f * cosa * cosb + 0.0001f;
+    float  denom = max(4.0f * cosa * cosb, 1e-4);
     return DGF / denom;
 }
 
@@ -103,21 +121,27 @@ vec3 shadePunctual(vec3 normal, vec3 viewDir, vec3 lightDir, vec3 radiance, vec3
     float cosa = max(dot(normal, lightDir), 0.0f);
     float cosb = max(dot(normal, viewDir),  0.0f);
     float cost = max(dot(normal, halfway),  0.0f);
+    float cos0 = max(dot(halfway, viewDir), 0.0f);
 
     //Fresnel component
     vec3 F0 = vec3(0.04f);
     F0 = mix(F0, albedo, metallic);
-    vec3 F = Fresnel(F0, max(dot(halfway, viewDir), 0.0));
+    vec3 F = Fresnel_Schlick(F0, cos0);
 
-    //Geometry component
-    float k = pow(roughness + 1.0f, 2.0) / 8.0f;
-    float G = Geometry(k, cosa, cosb);
+    vec3 specularColor = vec3(0.0f);
+    if(PBRold == 1){
+        float G = Geometry_Kelemen(cosa, cosb, cos0);
+        float ND = Distribution_Beckmann(roughness, cost);
 
-    //Normal Distribution component
-    float ND = Distribution(roughness, cost);
+        specularColor = ND * G * F * 0.25f;
+    }else{
+        float r = roughness + 1.0f;
+        float k = (r * r) / 8.0f;
+        float G = Geometry_Schlick_GGX(k, cosa, cosb);
+        float ND = Distribution_Trowbridge_Reitz_GGX(roughness, cost);
 
-    //Cook-Torrance BRDF
-    vec3 specularColor = CookTorranceBRDF(ND, G, F, cosa, cosb);
+        specularColor = CookTorranceBRDF(ND, G, F, cosa, cosb);
+    }
 
     //Reflectance/refraction values
     vec3 ks = F;
@@ -139,7 +163,7 @@ vec3 shadeIBL(vec3 normal, vec3 viewDir, vec3 albedo, float roughness, float met
     kd *= 1.0f - metallic;
 
     vec3 diffuse = vec3(0.0f);
-    if(spherical == 0){
+    if(spherical == 1){
         //Irradiance using Spherical Harmonics
         SHBase normalBase = GetBase(normal);
         vec3 irradiance = vec3(0.0f);
@@ -154,7 +178,7 @@ vec3 shadeIBL(vec3 normal, vec3 viewDir, vec3 albedo, float roughness, float met
     }
 
     //Specular using sanitized pre-filter map
-    vec3 reflection     = reflect(-viewDir, normal);
+    vec3 reflection     = normalize(reflect(-viewDir, normal));
     vec3 prefilterColor = textureLod(prefilterMap, reflection, roughness * LoD).rgb;
     vec2 envBRDF  = texture(LuT, vec2(cosb, roughness)).rg;
     vec3 specular = prefilterColor * (F * envBRDF.x + envBRDF.y);
@@ -164,19 +188,30 @@ vec3 shadeIBL(vec3 normal, vec3 viewDir, vec3 albedo, float roughness, float met
 
 void main(void) {
     //Extracting data from G-Buffer
-    vec3  position  = texture(material.gPosition, tex).rgb;
-    vec3  normal    = texture(material.gNormal,   tex).rgb;
+    vec4  Locations = texture(material.gNormal, tex);
+
+    vec3  viewRay  = viewPosition.xyz;
+    float depth    = Locations.w;
+    vec3  viewPos  = viewRay * depth;
+    vec4  worldPos = camera.invView * vec4(viewPos, 1.0f);
+    vec3  position = worldPos.xyz / worldPos.w;
+
+    vec3  normal    = normalize(Locations.xyz);
     vec3  albedo    = texture(material.gAlbedo,   tex).rgb;
     vec3  pbr       = texture(material.gPBR,      tex).rgb;
-    float ao        = pbr.r;
-    float roughness = pbr.g;
-    float metallic  = pbr.b;
-    normal = normalize(normal);
+    vec3  emission  = texture(material.gEmissive, tex).rgb;
+    float occlusion = texture(SSAO, tex).r;
+    float roughness = pbr.r;
+    float metallic  = pbr.g;
+
+    if(ambient == 0){
+        occlusion = 1.0f;
+    }
 
     vec3 viewDir = normalize(camera.position - position);
 
     vec3 L0 = vec3(0.0f);
-    for(int i = 0; i < 4; i++){
+    for(int i = 0; i < 6; i++){
         vec3  lightDiff = lights[i].position.xyz - lights[i].position.w * position;
         vec3  lightDir  = normalize(lightDiff);
         float distance    = length(lightDiff) * lights[i].position.w;
@@ -187,10 +222,8 @@ void main(void) {
     }
 
     //IBL environment lighting
-    vec3 ambient = shadeIBL(normal, viewDir, albedo, roughness, metallic, ao);
+    vec3 ambient = shadeIBL(normal, viewDir, albedo, roughness, metallic, occlusion);
     vec3 color = L0 + ambient;
-
-    color *= exposure;
-    vec3 toneMapped = ACEScurve(color);
-    fragmentColor = vec4(toneMapped, 1.0f);
+    color += emission;
+    fragmentColor = color;
 }
