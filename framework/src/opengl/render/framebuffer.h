@@ -38,18 +38,18 @@ namespace Framework {
         virtual void bindTarget(
             int targetCount,
             GLenum internalFormat,
-            GLenum format,
-            GLenum type,
             GLint  wrap,
             TextureFiltering filter
         );
 
         void resize(int width, int height) override;
         void bindBuffer(int mipLevel) override;
+        void lockTarget(int attachment);
         void syncDepth(const Framebuffer* other = nullptr) const;
         RenderTexture* operator[](const int index) const {
             return targets[index].get();
         }
+        ~Framebuffer() override;
     };
 }
 

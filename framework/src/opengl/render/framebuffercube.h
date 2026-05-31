@@ -17,8 +17,6 @@ namespace Framework {
         void bindTarget(
             int targetCount,
             GLenum internalFormat,
-            GLenum format,
-            GLenum type,
             GLint  wrap,
             TextureFiltering filter
         ) override;

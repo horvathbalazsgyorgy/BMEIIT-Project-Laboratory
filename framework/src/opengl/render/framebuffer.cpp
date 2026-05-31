@@ -1,6 +1,5 @@
 #include "framebuffer.h"
 
-#include <cmath>
 #include "rendertexture.h"
 #include "../../message/variants/applicationerror.h"
 #include "../../message/variants/applicationwarning.h"
@@ -46,8 +45,6 @@ namespace Framework {
     void Framebuffer::bindTarget(
         const int targetCount,
         const GLenum internalFormat,
-        const GLenum format,
-        const GLenum type,
         const GLint  wrap,
         const TextureFiltering filter)
     {
@@ -60,7 +57,7 @@ namespace Framework {
         for (int i = 0; i < targetCount; i++) {
             attachments.push_back(GL_COLOR_ATTACHMENT0 + nTarget + i);
             targets.push_back(std::make_unique<RenderTexture2D>(
-                width, height, TextureProperties(internalFormat, format, type, wrap, filter))
+                width, height, nMip, TextureProperties(internalFormat, wrap, filter))
             );
         }
 
@@ -95,8 +92,8 @@ namespace Framework {
         nTarget = 0;
         targets.clear();
         attachments.clear();
-        for (const auto [internalFormat, format, type, wrap, filter] : properties) {
-            this->bindTarget(1, internalFormat, format, type, wrap, filter);
+        for (const auto [internalFormat, format, filter] : properties) {
+            this->bindTarget(1, internalFormat, format, filter);
         }
     }
 
@@ -111,6 +108,12 @@ namespace Framework {
         glViewport(0, 0, (int)mipWidth, (int)mipHeight);
     }
 
+    void Framebuffer::lockTarget(const int attachment) {
+        const GLenum toAttach = GL_COLOR_ATTACHMENT0 + (attachment % nTarget);
+        glDrawBuffers(1, &toAttach);
+        complete = false;
+    }
+
     void Framebuffer::syncDepth(const Framebuffer* other) const {
         const GLuint target = other == nullptr ? 0 : other->framebuffers[0];
         glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffers[0]);
@@ -121,5 +124,20 @@ namespace Framework {
             GL_DEPTH_BUFFER_BIT, GL_NEAREST
         );
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    Framebuffer::~Framebuffer() {
+        if (!framebuffers.empty()) {
+            glDeleteFramebuffers((GLsizei)framebuffers.size(), framebuffers.data());
+        }
+
+        if (!depthBuffers.empty()) {
+            glDeleteRenderbuffers((GLsizei)depthBuffers.size(), depthBuffers.data());
+        }
+
+        framebuffers.clear();
+        depthBuffers.clear();
+        attachments.clear();
+        targets.clear();
     }
 }

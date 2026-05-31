@@ -20,8 +20,6 @@ namespace Framework {
     void FramebufferCube::bindTarget(
         const int targetCount,
         const GLenum internalFormat,
-        const GLenum format,
-        const GLenum type,
         const GLint  wrap,
         const TextureFiltering filter)
     {
@@ -34,7 +32,7 @@ namespace Framework {
         for (int i = 0; i < targetCount; i++) {
             attachments.push_back(GL_COLOR_ATTACHMENT0 + nTarget + i);
             targets.push_back(std::make_unique<RenderTextureCube>(
-                width, height, TextureProperties(internalFormat, format, type, wrap, filter))
+                width, height, nMip, TextureProperties(internalFormat, wrap, filter))
             );
         }
 
