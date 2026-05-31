@@ -9,6 +9,7 @@ namespace Framework {
     class DummyTexture : public Texture2D {
     public:
         DummyTexture(const GLenum internalFormat, const std::vector<unsigned char> &color) {
+            createHandle();
             glBindTexture(GL_TEXTURE_2D, texture);
             glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, color.data());
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

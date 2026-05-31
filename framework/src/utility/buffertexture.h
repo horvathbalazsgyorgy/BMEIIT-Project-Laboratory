@@ -18,6 +18,7 @@ namespace Framework {
             glBindBuffer(GL_ARRAY_BUFFER, textureBuffer);
             glBufferData(GL_ARRAY_BUFFER, buffer.size() * sizeof(Buf), buffer.data(), GL_STATIC_DRAW);
 
+            createHandle();
             glBindTexture(GL_TEXTURE_BUFFER, texture);
             glTexBuffer(GL_TEXTURE_BUFFER, internalFormat, textureBuffer);
             glBindTexture(GL_TEXTURE_BUFFER, 0);

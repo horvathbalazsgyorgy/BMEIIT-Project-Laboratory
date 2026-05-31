@@ -16,21 +16,30 @@ namespace Framework {
         std::string path;
         TextureEncoding encoding;
         GLenum format;
-        int width, height, channels;
-        unsigned int iPixel;
-        unsigned char* pixels;
-        bool initialized;
+
+        int width = 0;
+        int height = 0;
+        int channels = 0;
+        unsigned int iPixel = 0;
+        unsigned char* pixels = nullptr;
+        bool initialized = false;
     };
 
     class Texture {
     protected:
-        GLuint texture;
-    public:
-        Texture() { glGenTextures(1, &texture); }
+        bool owner = false;
+        GLuint texture = 0;
+
+        void createHandle();
+        Texture() = default;
         Texture(const unsigned int ID) { texture = ID; }
+    public:
+        Texture(const Texture& texture) = delete;
+        Texture& operator=(const Texture& texture) = delete;
+
         [[nodiscard]] GLuint ID() const { return texture; }
         virtual void bindTexture(int samplerIndex) const = 0;
-        virtual ~Texture() = default;
+        virtual ~Texture();
     };
 
 
@@ -39,19 +48,22 @@ namespace Framework {
         void createTexture();
         void streamTexture();
         static constexpr size_t chunk = 32768;
-    public:
+    protected:
         Texture2D() = default;
+    public:
         Texture2D(TextureEncoding encoding, const std::string &filePath);
         Texture2D(unsigned int ID, TextureEncoding encoding, const std::string &filePath);
         void bindTexture(int samplerIndex) const override;
         void run() override;
         bool complete() override;
+        ~Texture2D() override;
     };
 
 
     class TextureCube : virtual public Texture {
-    public:
+    protected:
         TextureCube() = default;
+    public:
         TextureCube(TextureEncoding encoding, const std::string (&faces)[6]);
         void bindTexture(int samplerIndex) const override;
     };
