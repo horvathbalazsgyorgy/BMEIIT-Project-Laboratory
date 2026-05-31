@@ -36,9 +36,9 @@ namespace Framework {
             Light::initDump();
         }
 
-        void setPosition(const glm::vec4 pos) { position = pos; }
-        void setEmittance(const glm::vec3 emit) { emittance = emit; }
-        void setAmbient(const glm::vec3 amb) { ambient = amb; }
+        glm::vec4& Position()  { return position;  }
+        glm::vec3& Emittance() { return emittance; }
+        glm::vec3& Ambient()   { return ambient;   }
         void relink(const std::vector<ShaderProgram *> &programs) override {
             UniformSource::relink(programs);
             for (auto* program : programs) {

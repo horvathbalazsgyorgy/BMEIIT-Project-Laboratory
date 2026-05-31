@@ -43,9 +43,9 @@ namespace Framework {
             Model::initDump();
         }
 
-        void setPosition(glm::vec3 pos)  { this->position = pos;  }
-        void setScale(glm::vec3 scaling) { this->scale = scaling; }
-        void setRotation(glm::vec3 rot)  { this->rotation = rot;  }
+        glm::vec3& Position() { return position; }
+        glm::vec3& Scale()    { return scale;    }
+        glm::vec3& Rotation() { return rotation; }
 
         void update();
         void draw(const ShaderProgram *provider) override;

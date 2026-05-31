@@ -6,9 +6,27 @@
 #include "stb_image.h"
 
 namespace Framework {
+    /**Texture**/
+    void Texture::createHandle() {
+        if (!texture) {
+            glGenTextures(1, &texture);
+            owner = true;
+        }
+    }
+
+    Texture::~Texture() {
+        if (owner && texture) {
+            glDeleteTextures(1, &texture);
+        }
+    }
+
     /**Texture2D**/
     void Texture2D::createTexture() {
-        glGenTextures(1, &texture);
+        if (owner && texture) {
+            glDeleteTextures(1, &texture);
+        }
+        texture = 0;
+        createHandle();
         glBindTexture(GL_TEXTURE_2D, texture);
 
         state.format = state.channels == 3 ? GL_RGB : (state.channels == 4 ? GL_RGBA : GL_RED);
@@ -63,6 +81,7 @@ namespace Framework {
         if (encoding == sRGB   && state.channels == 4) internalFormat = GL_SRGB8_ALPHA8;
         if (encoding == LINEAR && state.channels == 4) internalFormat = GL_RGBA8;
 
+        createHandle();
         glBindTexture(GL_TEXTURE_2D, texture);
         glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, state.width, state.height, 0, format, GL_UNSIGNED_BYTE, data);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -74,8 +93,7 @@ namespace Framework {
         stbi_image_free(data);
     }
 
-    Texture2D::Texture2D(const unsigned int ID, TextureEncoding encoding, const std::string &filePath) {
-        texture = ID;
+    Texture2D::Texture2D(const unsigned int ID, TextureEncoding encoding, const std::string &filePath) : Texture(ID) {
         state.path = filePath;
         state.encoding = encoding;
         state.iPixel = 0;
@@ -115,13 +133,22 @@ namespace Framework {
         glGenerateMipmap(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, 0);
         stbi_image_free(state.pixels);
+        state.pixels = nullptr;
         return true;
+    }
+
+    Texture2D::~Texture2D() {
+        if (state.pixels) {
+            stbi_image_free(state.pixels);
+            state.pixels = nullptr;
+        }
     }
 
     /**TextureCube**/
     TextureCube::TextureCube(TextureEncoding encoding, const std::string (&faces)[6]) {
         stbi_set_flip_vertically_on_load(false);
 
+        createHandle();
         glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
         int width, height, channels;
         for (int i = 0; i < 6; i++) {
