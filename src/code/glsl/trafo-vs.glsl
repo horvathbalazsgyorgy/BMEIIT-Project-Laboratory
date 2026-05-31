@@ -12,7 +12,8 @@ uniform struct{
 } model;
 
 uniform struct{
-    mat4 viewProjMatrix;
+    mat4 view;
+    mat4 projection;
     vec3 position;
 } camera;
 
@@ -29,7 +30,7 @@ void main(void) {
     worldTangent   = model.normalMatrix * vertexTangent;
     worldBitangent = model.normalMatrix * vertexBitangent;
 
-    gl_Position    = camera.viewProjMatrix * worldPosition;
+    gl_Position    = camera.projection * camera.view * worldPosition;
 
     viewDir = normalize(camera.position - vec3(worldPosition.xyz));
     tex = vertexTexCoord;
