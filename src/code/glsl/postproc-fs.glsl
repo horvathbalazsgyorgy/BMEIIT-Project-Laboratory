@@ -36,7 +36,7 @@ void main(void) {
 
     if(material.bloom == 1){
         vec3 bloomColor = texture(material.bloomTexture, tex).rgb;
-        hdrColor = mix(hdrColor, bloomColor, 0.2f);
+        hdrColor = mix(hdrColor, bloomColor, 0.1f);
     }
 
     vec3 color = hdrColor * material.exposure;
