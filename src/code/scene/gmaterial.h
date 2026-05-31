@@ -8,10 +8,10 @@ using namespace Framework;
 class GMaterial : public Material {
     Framebuffer *gBuffer;
     void initDump() override {
-        this->linkUniform("gPosition", [this]{ return (*gBuffer)[0]; });
-        this->linkUniform("gNormal",   [this]{ return (*gBuffer)[1]; });
-        this->linkUniform("gAlbedo",   [this]{ return (*gBuffer)[2]; });
-        this->linkUniform("gPBR",      [this]{ return (*gBuffer)[3]; });
+        this->linkUniform("gNormal",   [this]{ return (*gBuffer)[0]; });
+        this->linkUniform("gAlbedo",   [this]{ return (*gBuffer)[1]; });
+        this->linkUniform("gPBR",      [this]{ return (*gBuffer)[2]; });
+        this->linkUniform("gEmissive", [this]{ return (*gBuffer)[3]; });
     }
 public:
     GMaterial(ShaderProgram* gBufProgram, Framebuffer* gBuffer) : Material(gBufProgram)
