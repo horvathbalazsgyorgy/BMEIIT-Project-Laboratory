@@ -19,6 +19,7 @@ HDRTexture::HDRTexture(const std::string &filePath) {
     GLenum format = channels == 3 ? GL_RGB : (channels == 4 ? GL_RGBA : GL_RED);
     GLint filter = GL_LINEAR;
 
+    createHandle();
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_FLOAT, data);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);

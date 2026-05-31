@@ -25,18 +25,21 @@ public:
             Face(  0.0f,  90.0f,glm::vec3(0.0f,-1.0f, 0.0f)),
             Face(  0.0f, -90.0f,glm::vec3(0.0f,-1.0f, 0.0f)),
         };
-        this->cubeCamera->setAspectRatio(1.0f);
-        this->cubeCamera->setFov(90.0f);
-        this->cubeCamera->setPlanes(0.1f, 10.0f);
+        this->cubeCamera->Aspect() = 1.0f;
+        this->cubeCamera->Fov() = glm::radians(90.0f);
+        this->cubeCamera->NearPlane() = 0.1f;
+        this->cubeCamera->FarPlane()  = 10.0f;
 
-        cubeCamera->setRotation(faces[face].pitch, faces[face].yaw);
+        cubeCamera->Pitch() = faces[face].pitch;
+        cubeCamera->Yaw()   = faces[face].yaw;
         cubeCamera->configureCoordinateSystem(faces[face].up);
         cubeCamera->configureTransformation();
     }
 
     void draw(const ShaderProgram *provider) override {
         auto i = (++face) % 6;
-        cubeCamera->setRotation(faces[i].pitch, faces[i].yaw);
+        cubeCamera->Pitch() = faces[i].pitch;
+        cubeCamera->Yaw()   = faces[i].yaw;
         cubeCamera->configureCoordinateSystem(faces[i].up);
         cubeCamera->configureTransformation();
 
