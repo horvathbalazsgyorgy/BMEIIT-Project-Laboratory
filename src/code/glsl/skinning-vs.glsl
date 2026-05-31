@@ -16,10 +16,12 @@ uniform struct{
 } model;
 
 uniform struct{
-    mat4 viewProjMatrix;
+    mat4 view;
+    mat4 projection;
+    float farPlane;
 } camera;
 
-out vec4 worldPosition;
+out vec4 viewPosition;
 out vec3 worldNormal;
 out vec3 worldTangent;
 out vec3 worldBitangent;
@@ -45,12 +47,13 @@ void main(void) {
     mat3 blendedNormal = transpose(inverse(mat3(blendedMat)));
 
     vec4 blendedPos = blendedMat * vec4(vertexPosition, 1.0f);
-    worldPosition   = model.modelMatrix  * blendedPos;
-    worldNormal     = model.normalMatrix * blendedNormal * vertexNormal;
-    worldTangent    = model.normalMatrix * blendedNormal * vertexTangent;
-    worldBitangent  = model.normalMatrix * blendedNormal * vertexBitangent;
+    vec4 worldPosition = model.modelMatrix  * blendedPos;
+    viewPosition       = camera.view        * worldPosition;
+    worldNormal        = model.normalMatrix * blendedNormal * vertexNormal;
+    worldTangent       = model.normalMatrix * blendedNormal * vertexTangent;
+    worldBitangent     = model.normalMatrix * blendedNormal * vertexBitangent;
 
-    gl_Position = camera.viewProjMatrix * worldPosition;
+    gl_Position = camera.projection * camera.view * worldPosition;
 
     for(int i = 0; i < 4; i++) tex[i] = vertexTexCoords[i];
     color   = vertexColor;
