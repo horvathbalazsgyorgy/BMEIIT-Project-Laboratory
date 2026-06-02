@@ -7,9 +7,7 @@ The engine is built from the ground up using **C++** and **modern OpenGL**, focu
 > ***Note:***
 This project takes heavy inspiration from [**LearnOpenGL**](https://learnopengl.com/), courtesy of [***Joey De Vries***](https://github.com/JoeyDeVries). All credit for such inspirations goes to him.
 
-<p align="center">
-  <video src="media/model-viewer-cinematic-compressed.mp4" width="80%" autoplay loop muted playsinline></video>
-</p>
+https://github.com/user-attachments/assets/927b0fd4-53ee-42ca-b07d-b68f36e43162
 
 ## The PBR Approach
 
@@ -285,7 +283,7 @@ At the time of this writing, formal documentation is not yet available — *neit
     * ***O*** - Enable/disable SSAO.
     * ***B*** - Enable/disable Bloom.
 
-* **Cinematic Camera:** By pressing ***C***, the program will switch to a cinematic camera that repeatedly spans throughout the scene. Pressing ***C*** again will switch back to the regular camera.
+* **Cinematic Camera:** By pressing ***C***, the program will switch to a cinematic camera that repeatedly spans throughout the scene, as seen in the demo video above. Pressing ***C*** again will switch back to the regular camera.
  
 ## License
 
