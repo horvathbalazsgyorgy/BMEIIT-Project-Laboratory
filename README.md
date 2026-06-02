@@ -8,7 +8,7 @@ The engine is built from the ground up using **C++** and **modern OpenGL**, focu
 This project takes heavy inspiration from [**LearnOpenGL**](https://learnopengl.com/), courtesy of [***Joey De Vries***](https://github.com/JoeyDeVries). All credit for such inspirations goes to him.
 
 <p align="center">
-  <video src="media/model-viewer-cinematic.mp4" width="80%" autoplay loop muted playsinline></video>
+  <video src="media/model-viewer-cinematic-compressed.mp4" width="80%" autoplay loop muted playsinline></video>
 </p>
 
 ## The PBR Approach
