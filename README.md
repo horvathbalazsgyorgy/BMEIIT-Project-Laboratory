@@ -273,7 +273,7 @@ cd build/bin
 
 At the time of this writing, formal documentation is not yet available — *neither English nor Hungarian*. However, in order to give this engine a try, you can find a quick user manual detailing the control mechanics below:
 
-* **Movement:** You can move around using the ***WASD*** keys. You can also look around with your mouse while holding down either the ***Left*** or ***Right*** mouse button.
+* **Movement:** You can move around using the ***WASD*** keys. You can also look around with your mouse while holding down the ***Left*** mouse button.
 
 * **Scene Manipulation:** You can directly control and customize the look of your scene with the following keys:
 
