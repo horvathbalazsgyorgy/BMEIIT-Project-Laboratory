@@ -1,0 +1,6 @@
+# Third-party libraries
+libs/** linguist-vendored
+framework/libs/** linguist-vendored
+
+# Arbitrary asset files
+src/resources/** linguist-vendored
